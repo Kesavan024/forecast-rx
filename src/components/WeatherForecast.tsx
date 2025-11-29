@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Cloud, CloudRain, Sun, Plus, Search, Trash2, Package, TrendingUp } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import MonthBasedForecast from "./MonthBasedForecast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
@@ -105,6 +107,18 @@ const WeatherForecast = () => {
   const [medicineToDelete, setMedicineToDelete] = useState<string>("");
   const { toast } = useToast();
 
+  // Load user session and data
+  useEffect(() => {
+    const loadUserData = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // User is logged in, could load saved medicines here if needed
+      }
+    };
+    
+    loadUserData();
+  }, []);
+
   const filteredMedicines = medicines.filter((med) =>
     med.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -174,9 +188,23 @@ const WeatherForecast = () => {
 
     setIsLoading(true);
 
-    setTimeout(() => {
+    setTimeout(async () => {
       const data = getForecastData(weather, medicine);
       setForecast(data);
+      
+      // Save forecast to database
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        await supabase.from("forecasts").insert({
+          user_id: user.id,
+          weather: weather,
+          medicine: medicine,
+          forecast_units: data.forecast_units,
+          revenue: data.revenue,
+        });
+      }
+      
       setIsLoading(false);
       
       toast({
@@ -208,6 +236,10 @@ const WeatherForecast = () => {
 
   return (
     <div className="space-y-6">
+      {/* Month-Based Forecasting */}
+      <MonthBasedForecast medicines={medicines} />
+      
+      {/* Weather-Based Forecasting */}
       <Card className="shadow-strong border-border/50 bg-gradient-card">
         <CardHeader>
           <CardTitle className="text-2xl">Weather-Based Forecast</CardTitle>
