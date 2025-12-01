@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Cloud, CloudRain, Sun, Plus, Search, Trash2, Package, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import MonthBasedForecast from "./MonthBasedForecast";
+import FutureStockPrediction from "./FutureStockPrediction";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
@@ -236,6 +237,9 @@ const WeatherForecast = () => {
 
   return (
     <div className="space-y-6">
+      {/* Future Stock Prediction */}
+      <FutureStockPrediction medicines={medicines} />
+      
       {/* Month-Based Forecasting */}
       <MonthBasedForecast medicines={medicines} />
       
