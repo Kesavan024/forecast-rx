@@ -79,7 +79,7 @@ const UnifiedForecastDashboard = () => {
           <TabsTrigger value="weather" className="flex items-center gap-2 py-3">
             <CloudRain className="h-4 w-4" />
             <span className="hidden sm:inline">Weather</span>
-            <span className="sm:hidden">Today</span>
+            <span className="sm:hidden">Weather</span>
           </TabsTrigger>
           <TabsTrigger value="future" className="flex items-center gap-2 py-3">
             <TrendingUp className="h-4 w-4" />
