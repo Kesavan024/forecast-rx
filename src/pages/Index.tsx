@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import WeatherForecast from "@/components/WeatherForecast";
+import UnifiedForecastDashboard from "@/components/UnifiedForecastDashboard";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -68,7 +68,7 @@ const Index = () => {
           </p>
         </div>
 
-        <WeatherForecast />
+        <UnifiedForecastDashboard />
       </main>
 
       {/* Footer */}
