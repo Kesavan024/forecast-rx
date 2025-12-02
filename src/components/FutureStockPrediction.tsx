@@ -215,6 +215,7 @@ const FutureStockPrediction = ({ medicines }: FutureStockPredictionProps) => {
           month: "Next 12 Months",
           forecast_units: totalAvgCase,
           revenue: totalAvgCase * 50,
+          prediction_period: "Next 12 Months",
         });
       }
       

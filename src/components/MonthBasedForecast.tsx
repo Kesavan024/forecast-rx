@@ -144,6 +144,7 @@ const MonthBasedForecast = ({ medicines }: MonthBasedForecastProps) => {
           month: month,
           forecast_units: data.forecast_units,
           revenue: data.revenue,
+          prediction_period: month,
         });
       }
       

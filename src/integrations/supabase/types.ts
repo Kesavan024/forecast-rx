@@ -21,6 +21,7 @@ export type Database = {
           id: string
           medicine: string
           month: string | null
+          prediction_period: string | null
           revenue: number
           user_id: string
           weather: string
@@ -31,6 +32,7 @@ export type Database = {
           id?: string
           medicine: string
           month?: string | null
+          prediction_period?: string | null
           revenue: number
           user_id: string
           weather: string
@@ -41,6 +43,7 @@ export type Database = {
           id?: string
           medicine?: string
           month?: string | null
+          prediction_period?: string | null
           revenue?: number
           user_id?: string
           weather?: string
