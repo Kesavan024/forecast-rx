@@ -95,12 +95,17 @@ const getForecastData = (weather: string, medicine: string) => {
   return { forecast_units: units, revenue };
 };
 
-const WeatherForecast = () => {
+interface WeatherForecastProps {
+  medicines?: string[];
+  isStandaloneView?: boolean;
+}
+
+const WeatherForecast = ({ medicines: propMedicines, isStandaloneView = true }: WeatherForecastProps) => {
   const [weather, setWeather] = useState<string>("");
   const [medicine, setMedicine] = useState<string>("");
   const [forecast, setForecast] = useState<{ forecast_units: number; revenue: number } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [medicines, setMedicines] = useState<string[]>(defaultMedicines);
+  const [medicines, setMedicines] = useState<string[]>(propMedicines || defaultMedicines);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [newMedicineName, setNewMedicineName] = useState<string>("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -237,12 +242,6 @@ const WeatherForecast = () => {
 
   return (
     <div className="space-y-6">
-      {/* Future Stock Prediction */}
-      <FutureStockPrediction medicines={medicines} />
-      
-      {/* Month-Based Forecasting */}
-      <MonthBasedForecast medicines={medicines} />
-      
       {/* Weather-Based Forecasting */}
       <Card className="shadow-strong border-border/50 bg-gradient-card">
         <CardHeader>
