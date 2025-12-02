@@ -208,6 +208,7 @@ const WeatherForecast = ({ medicines: propMedicines, isStandaloneView = true }: 
           medicine: medicine,
           forecast_units: data.forecast_units,
           revenue: data.revenue,
+          prediction_period: "Current Weather",
         });
       }
       
