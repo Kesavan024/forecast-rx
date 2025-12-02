@@ -69,13 +69,8 @@ const UnifiedForecastDashboard = () => {
       </Card>
 
       {/* Tabbed Forecasting Interface */}
-      <Tabs defaultValue="future" className="w-full">
+      <Tabs defaultValue="month" className="w-full">
         <TabsList className="grid w-full grid-cols-3 h-auto">
-          <TabsTrigger value="future" className="flex items-center gap-2 py-3">
-            <TrendingUp className="h-4 w-4" />
-            <span className="hidden sm:inline">12-Month</span>
-            <span className="sm:hidden">Future</span>
-          </TabsTrigger>
           <TabsTrigger value="month" className="flex items-center gap-2 py-3">
             <Calendar className="h-4 w-4" />
             <span className="hidden sm:inline">Seasonal</span>
@@ -86,11 +81,12 @@ const UnifiedForecastDashboard = () => {
             <span className="hidden sm:inline">Weather</span>
             <span className="sm:hidden">Today</span>
           </TabsTrigger>
+          <TabsTrigger value="future" className="flex items-center gap-2 py-3">
+            <TrendingUp className="h-4 w-4" />
+            <span className="hidden sm:inline">12-Month</span>
+            <span className="sm:hidden">Future</span>
+          </TabsTrigger>
         </TabsList>
-
-        <TabsContent value="future" className="mt-6">
-          <FutureStockPrediction medicines={medicines} />
-        </TabsContent>
 
         <TabsContent value="month" className="mt-6">
           <MonthBasedForecast medicines={medicines} />
@@ -98,6 +94,10 @@ const UnifiedForecastDashboard = () => {
 
         <TabsContent value="weather" className="mt-6">
           <WeatherForecast medicines={medicines} isStandaloneView={false} />
+        </TabsContent>
+
+        <TabsContent value="future" className="mt-6">
+          <FutureStockPrediction medicines={medicines} />
         </TabsContent>
       </Tabs>
 
