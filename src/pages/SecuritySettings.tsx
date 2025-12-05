@@ -34,7 +34,7 @@ const SecuritySettings = () => {
     {
       id: "rls_policies",
       name: "Row Level Security (RLS)",
-      description: "All database tables have RLS enabled with proper user-scoped policies ensuring complete data isolation between users.",
+      description: "All database tables have complete RLS coverage with INSERT, SELECT, UPDATE, and DELETE policies ensuring full data isolation.",
       status: "secure"
     },
     {
@@ -59,6 +59,12 @@ const SecuritySettings = () => {
       id: "user_roles",
       name: "Role-Based Access Control",
       description: "User roles are stored in a separate table with restrictive RLS policies preventing privilege escalation attacks.",
+      status: "secure"
+    },
+    {
+      id: "gdpr_compliance",
+      name: "Data Deletion Rights",
+      description: "Users can delete their own profile data, supporting GDPR compliance and data privacy regulations.",
       status: "secure"
     }
   ];
