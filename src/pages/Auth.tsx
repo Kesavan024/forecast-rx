@@ -9,9 +9,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
+import { emailSchema, strongPasswordSchema } from "@/lib/password-validation";
+import PasswordStrengthMeter from "@/components/PasswordStrengthMeter";
 
-const emailSchema = z.string().email("Please enter a valid email address");
-const passwordSchema = z.string().min(6, "Password must be at least 6 characters");
+// Login can use simpler password validation (user already has account)
+const loginPasswordSchema = z.string().min(1, "Password is required");
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -56,7 +58,7 @@ const Auth = () => {
     try {
       // Validate inputs
       emailSchema.parse(loginEmail);
-      passwordSchema.parse(loginPassword);
+      loginPasswordSchema.parse(loginPassword);
     } catch (error) {
       if (error instanceof z.ZodError) {
         toast({
@@ -104,9 +106,9 @@ const Auth = () => {
     e.preventDefault();
 
     try {
-      // Validate inputs
+      // Validate inputs with strong password requirements
       emailSchema.parse(signupEmail);
-      passwordSchema.parse(signupPassword);
+      strongPasswordSchema.parse(signupPassword);
 
       if (signupPassword !== confirmPassword) {
         toast({
@@ -380,6 +382,7 @@ const Auth = () => {
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
+                  <PasswordStrengthMeter password={signupPassword} />
                 </div>
 
                 <div className="space-y-2">

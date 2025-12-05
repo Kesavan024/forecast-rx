@@ -34,19 +34,31 @@ const SecuritySettings = () => {
     {
       id: "rls_policies",
       name: "Row Level Security (RLS)",
-      description: "All database tables have RLS enabled with proper user-scoped policies ensuring data isolation.",
+      description: "All database tables have RLS enabled with proper user-scoped policies ensuring complete data isolation between users.",
       status: "secure"
     },
     {
       id: "auth_implementation",
       name: "Authentication System",
-      description: "Email/password authentication with secure session management and proper token refresh handling.",
+      description: "Email/password authentication with secure session management, proper token refresh handling, and email redirect protection.",
+      status: "secure"
+    },
+    {
+      id: "password_strength",
+      name: "Password Strength Requirements",
+      description: "New accounts require strong passwords with minimum 8 characters, uppercase, lowercase, numbers, and special characters.",
       status: "secure"
     },
     {
       id: "input_validation",
       name: "Input Validation",
-      description: "Form inputs are validated using Zod schema validation to prevent malformed data.",
+      description: "All form inputs are validated using Zod schema validation with proper sanitization to prevent injection attacks.",
+      status: "secure"
+    },
+    {
+      id: "user_roles",
+      name: "Role-Based Access Control",
+      description: "User roles are stored in a separate table with restrictive RLS policies preventing privilege escalation attacks.",
       status: "secure"
     }
   ];
