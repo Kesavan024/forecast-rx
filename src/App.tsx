@@ -8,6 +8,7 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import SecuritySettings from "./pages/SecuritySettings";
 import Profile from "./pages/Profile";
+import Install from "./pages/Install";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -44,6 +45,7 @@ const App = () => (
               </ProtectedRoute>
             }
           />
+          <Route path="/install" element={<Install />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
