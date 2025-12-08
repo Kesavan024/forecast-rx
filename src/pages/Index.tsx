@@ -1,4 +1,4 @@
-import { Activity, LogOut, Shield, User } from "lucide-react";
+import { Activity, LogOut, Shield, User, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -45,6 +45,15 @@ const Index = () => {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/install")}
+                className="gap-2"
+              >
+                <Download className="h-4 w-4" />
+                Install
+              </Button>
               <Button
                 variant="ghost"
                 size="sm"
