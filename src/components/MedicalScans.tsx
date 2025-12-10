@@ -3,6 +3,8 @@ import { Scan } from "lucide-react";
 import mriScan from "@/assets/mri-scan.png";
 import ecoScan from "@/assets/eco-scan.png";
 import xrayScan from "@/assets/xray-scan.png";
+import ctScan from "@/assets/ct-scan.png";
+import petScan from "@/assets/pet-scan.png";
 
 const scans = [
   {
@@ -11,6 +13,20 @@ const scans = [
     description: "Magnetic Resonance Imaging for detailed soft tissue analysis",
     image: mriScan,
     category: "Neurological",
+  },
+  {
+    id: "ct",
+    name: "CT Scan",
+    description: "Computed Tomography for detailed cross-sectional imaging",
+    image: ctScan,
+    category: "General Diagnostic",
+  },
+  {
+    id: "pet",
+    name: "PET Scan",
+    description: "Positron Emission Tomography for metabolic activity detection",
+    image: petScan,
+    category: "Oncology",
   },
   {
     id: "eco",
