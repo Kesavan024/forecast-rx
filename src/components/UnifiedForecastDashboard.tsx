@@ -5,7 +5,7 @@ import { CloudRain, Calendar, TrendingUp, Package } from "lucide-react";
 import WeatherForecast from "./WeatherForecast";
 import MonthBasedForecast from "./MonthBasedForecast";
 import FutureStockPrediction from "./FutureStockPrediction";
-
+import MedicalScans from "./MedicalScans";
 const defaultMedicines = [
   "Electral (ORS)",
   "Neutrogena Sunscreen",
@@ -101,7 +101,8 @@ const UnifiedForecastDashboard = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Info Card */}
+      {/* Medical Scans Section */}
+      <MedicalScans />
       <Card className="border-border/50 bg-muted/30">
         <CardContent className="pt-6">
           <div className="flex items-start gap-3">
