@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CloudRain, Calendar, TrendingUp, Package } from "lucide-react";
+import { CloudRain, Calendar, TrendingUp, Package, Activity } from "lucide-react";
 import WeatherForecast from "./WeatherForecast";
 import MonthBasedForecast from "./MonthBasedForecast";
 import FutureStockPrediction from "./FutureStockPrediction";
 import MedicalScans from "./MedicalScans";
+import TimeSeriesAnalytics from "./TimeSeriesAnalytics";
 const defaultMedicines = [
   "Electral (ORS)",
   "Neutrogena Sunscreen",
@@ -64,27 +65,38 @@ const UnifiedForecastDashboard = () => {
                 Long-term stock predictions with range analysis
               </p>
             </div>
+            
+            <div className="p-4 rounded-lg bg-chart-4/10 border border-chart-4/30">
+              <div className="flex items-center gap-2 mb-2">
+                <Activity className="h-5 w-5 text-chart-4" />
+                <h3 className="font-semibold text-sm">Time-Series Analytics</h3>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Historical trends, anomaly detection & seasonal analysis
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Tabbed Forecasting Interface */}
       <Tabs defaultValue="month" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 h-auto">
-          <TabsTrigger value="month" className="flex items-center gap-2 py-3">
+        <TabsList className="grid w-full grid-cols-4 h-auto">
+          <TabsTrigger value="month" className="flex items-center gap-1 py-3">
             <Calendar className="h-4 w-4" />
             <span className="hidden sm:inline">Seasonal</span>
-            <span className="sm:hidden">Month</span>
           </TabsTrigger>
-          <TabsTrigger value="weather" className="flex items-center gap-2 py-3">
+          <TabsTrigger value="weather" className="flex items-center gap-1 py-3">
             <CloudRain className="h-4 w-4" />
             <span className="hidden sm:inline">Weather</span>
-            <span className="sm:hidden">Weather</span>
           </TabsTrigger>
-          <TabsTrigger value="future" className="flex items-center gap-2 py-3">
+          <TabsTrigger value="future" className="flex items-center gap-1 py-3">
             <TrendingUp className="h-4 w-4" />
             <span className="hidden sm:inline">12-Month</span>
-            <span className="sm:hidden">Future</span>
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="flex items-center gap-1 py-3">
+            <Activity className="h-4 w-4" />
+            <span className="hidden sm:inline">Analytics</span>
           </TabsTrigger>
         </TabsList>
 
@@ -98,6 +110,10 @@ const UnifiedForecastDashboard = () => {
 
         <TabsContent value="future" className="mt-6">
           <FutureStockPrediction medicines={medicines} />
+        </TabsContent>
+
+        <TabsContent value="analytics" className="mt-6">
+          <TimeSeriesAnalytics medicines={medicines} />
         </TabsContent>
       </Tabs>
 
