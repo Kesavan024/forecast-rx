@@ -7,16 +7,7 @@ import MonthBasedForecast from "./MonthBasedForecast";
 import FutureStockPrediction from "./FutureStockPrediction";
 import MedicalScans from "./MedicalScans";
 import TimeSeriesAnalytics from "./TimeSeriesAnalytics";
-const defaultMedicines = [
-  "Electral (ORS)",
-  "Neutrogena Sunscreen",
-  "Digene (Antacid)",
-  "Crocin (Paracetamol)",
-  "Livogen (Vitamin)",
-  "Benadryl Syrup (Cough)",
-  "Dolo 650 (Cough & Cold)",
-  "Cetirizine (Anti-allergy)",
-];
+import { defaultMedicines } from "@/constants/medicines";
 
 const UnifiedForecastDashboard = () => {
   const [medicines] = useState<string[]>(defaultMedicines);
