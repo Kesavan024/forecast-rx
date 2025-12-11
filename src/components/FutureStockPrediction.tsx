@@ -13,6 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { getSeasonalPattern, getMedicineMultiplier } from "@/constants/medicines";
 
 const months = [
   { value: "January", label: "January", season: "Winter", index: 0 },
@@ -29,92 +30,37 @@ const months = [
   { value: "December", label: "December", season: "Winter", index: 11 },
 ];
 
-// Weather-based multipliers
-const weatherMultipliers: Record<string, Record<string, number>> = {
-  "Hot": {
-    "Electral (ORS)": 1.8,
-    "Neutrogena Sunscreen": 1.52,
-    "Digene (Antacid)": 0.88,
-    "Crocin (Paracetamol)": 0.72,
-    "Livogen (Vitamin)": 0.6,
-    "Benadryl Syrup (Cough)": 0.36,
-    "Dolo 650 (Cough & Cold)": 0.4,
-    "Cetirizine (Anti-allergy)": 0.56,
-  },
-  "Cloudy": {
-    "Electral (ORS)": 0.8,
-    "Neutrogena Sunscreen": 0.6,
-    "Digene (Antacid)": 1.0,
-    "Crocin (Paracetamol)": 0.88,
-    "Livogen (Vitamin)": 0.72,
-    "Benadryl Syrup (Cough)": 0.6,
-    "Dolo 650 (Cough & Cold)": 0.64,
-    "Cetirizine (Anti-allergy)": 0.76,
-  },
-  "Rainy": {
-    "Electral (ORS)": 0.48,
-    "Neutrogena Sunscreen": 0.32,
-    "Digene (Antacid)": 0.72,
-    "Crocin (Paracetamol)": 1.28,
-    "Livogen (Vitamin)": 0.8,
-    "Benadryl Syrup (Cough)": 1.68,
-    "Dolo 650 (Cough & Cold)": 1.8,
-    "Cetirizine (Anti-allergy)": 1.12,
-  },
-};
-
-// Season-based multipliers
-const seasonalMultipliers: Record<string, Record<string, number>> = {
-  "Winter": {
-    "Electral (ORS)": 0.8,
-    "Neutrogena Sunscreen": 0.7,
-    "Digene (Antacid)": 1.1,
-    "Crocin (Paracetamol)": 1.3,
-    "Livogen (Vitamin)": 1.2,
-    "Benadryl Syrup (Cough)": 1.5,
-    "Dolo 650 (Cough & Cold)": 1.6,
-    "Cetirizine (Anti-allergy)": 1.2,
-  },
-  "Summer": {
-    "Electral (ORS)": 1.8,
-    "Neutrogena Sunscreen": 1.9,
-    "Digene (Antacid)": 1.2,
-    "Crocin (Paracetamol)": 0.9,
-    "Livogen (Vitamin)": 1.0,
-    "Benadryl Syrup (Cough)": 0.6,
-    "Dolo 650 (Cough & Cold)": 0.7,
-    "Cetirizine (Anti-allergy)": 1.1,
-  },
-  "Monsoon": {
-    "Electral (ORS)": 1.2,
-    "Neutrogena Sunscreen": 0.8,
-    "Digene (Antacid)": 1.0,
-    "Crocin (Paracetamol)": 1.4,
-    "Livogen (Vitamin)": 1.1,
-    "Benadryl Syrup (Cough)": 1.7,
-    "Dolo 650 (Cough & Cold)": 1.8,
-    "Cetirizine (Anti-allergy)": 1.4,
-  },
-  "Spring": {
-    "Electral (ORS)": 1.0,
-    "Neutrogena Sunscreen": 1.2,
-    "Digene (Antacid)": 1.0,
-    "Crocin (Paracetamol)": 1.0,
-    "Livogen (Vitamin)": 1.1,
-    "Benadryl Syrup (Cough)": 1.0,
-    "Dolo 650 (Cough & Cold)": 1.0,
-    "Cetirizine (Anti-allergy)": 1.5,
-  },
-  "Autumn": {
-    "Electral (ORS)": 0.9,
-    "Neutrogena Sunscreen": 1.0,
-    "Digene (Antacid)": 1.0,
-    "Crocin (Paracetamol)": 1.1,
-    "Livogen (Vitamin)": 1.0,
-    "Benadryl Syrup (Cough)": 1.2,
-    "Dolo 650 (Cough & Cold)": 1.2,
-    "Cetirizine (Anti-allergy)": 1.6,
-  },
+// Get weather multiplier for any medicine
+const getWeatherMultiplier = (weather: string, medicine: string): number => {
+  const lowerMed = medicine.toLowerCase();
+  
+  // Summer medicines (ORS, Sunscreen)
+  if (lowerMed.includes("ors") || lowerMed.includes("electral") || 
+      lowerMed.includes("sunscreen") || lowerMed.includes("eno")) {
+    if (weather === "Hot") return 1.8;
+    if (weather === "Cloudy") return 0.8;
+    return 0.48;
+  }
+  
+  // Cold/Cough medicines
+  if (lowerMed.includes("cough") || lowerMed.includes("cold") || 
+      lowerMed.includes("benadryl") || lowerMed.includes("dolo") ||
+      lowerMed.includes("crocin") || lowerMed.includes("sinarest")) {
+    if (weather === "Rainy") return 1.8;
+    if (weather === "Cloudy") return 1.0;
+    return 0.4;
+  }
+  
+  // Allergy medicines
+  if (lowerMed.includes("allergy") || lowerMed.includes("cetirizine") ||
+      lowerMed.includes("allegra") || lowerMed.includes("montair")) {
+    if (weather === "Hot") return 0.8;
+    if (weather === "Cloudy") return 1.2;
+    return 1.4;
+  }
+  
+  // Default
+  return 1.0;
 };
 
 interface FutureStockPredictionProps {
@@ -142,31 +88,32 @@ const FutureStockPrediction = ({ medicines }: FutureStockPredictionProps) => {
   const calculateFutureForecast = (medicineName: string) => {
     const next12Months = getNext12Months();
     const baseUnits = 250;
-    const pricePerUnit = 50;
+    const pricePerUnit = 50 + Math.random() * 30;
+    const medicineMultiplier = getMedicineMultiplier(medicineName);
+    const seasonalPattern = getSeasonalPattern(medicineName);
     
     return next12Months.map((month) => {
-      const season = month.season;
-      const seasonMultiplier = seasonalMultipliers[season][medicineName] || 1.0;
+      const seasonMultiplier = seasonalPattern[month.index];
       
-      // Calculate best case (Hot weather) and worst case (lowest weather scenario)
-      const weatherScenarios = Object.entries(weatherMultipliers).map(([weather, meds]) => ({
+      // Calculate weather scenarios using the helper function
+      const weatherScenarios = ["Hot", "Cloudy", "Rainy"].map(weather => ({
         weather,
-        multiplier: meds[medicineName] || 1.0,
+        multiplier: getWeatherMultiplier(weather, medicineName),
       }));
       
       // Best case: highest weather multiplier
       const bestWeatherMultiplier = Math.max(...weatherScenarios.map(w => w.multiplier));
-      const bestCase = Math.round(baseUnits * seasonMultiplier * bestWeatherMultiplier);
-      const bestCaseRevenue = bestCase * pricePerUnit;
+      const bestCase = Math.round(baseUnits * medicineMultiplier * seasonMultiplier * bestWeatherMultiplier);
+      const bestCaseRevenue = Math.round(bestCase * pricePerUnit);
       
       // Worst case: lowest weather multiplier
       const worstWeatherMultiplier = Math.min(...weatherScenarios.map(w => w.multiplier));
-      const worstCase = Math.round(baseUnits * seasonMultiplier * worstWeatherMultiplier);
-      const worstCaseRevenue = worstCase * pricePerUnit;
+      const worstCase = Math.round(baseUnits * medicineMultiplier * seasonMultiplier * worstWeatherMultiplier);
+      const worstCaseRevenue = Math.round(worstCase * pricePerUnit);
       
       // Average case
       const avgCase = Math.round((bestCase + worstCase) / 2);
-      const avgRevenue = avgCase * pricePerUnit;
+      const avgRevenue = Math.round(avgCase * pricePerUnit);
       
       return {
         month: month.label.substring(0, 3),

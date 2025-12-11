@@ -13,95 +13,36 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { getSeasonalPattern, getMedicineMultiplier } from "@/constants/medicines";
 
 const months = [
-  { value: "January", label: "January", season: "Winter" },
-  { value: "February", label: "February", season: "Winter" },
-  { value: "March", label: "March", season: "Spring" },
-  { value: "April", label: "April", season: "Spring" },
-  { value: "May", label: "May", season: "Summer" },
-  { value: "June", label: "June", season: "Summer" },
-  { value: "July", label: "July", season: "Monsoon" },
-  { value: "August", label: "August", season: "Monsoon" },
-  { value: "September", label: "September", season: "Monsoon" },
-  { value: "October", label: "October", season: "Autumn" },
-  { value: "November", label: "November", season: "Autumn" },
-  { value: "December", label: "December", season: "Winter" },
-];
-
-const defaultMedicines = [
-  "Electral (ORS)",
-  "Neutrogena Sunscreen",
-  "Digene (Antacid)",
-  "Crocin (Paracetamol)",
-  "Livogen (Vitamin)",
-  "Benadryl Syrup (Cough)",
-  "Dolo 650 (Cough & Cold)",
-  "Cetirizine (Anti-allergy)",
+  { value: "January", label: "January", season: "Winter", index: 0 },
+  { value: "February", label: "February", season: "Winter", index: 1 },
+  { value: "March", label: "March", season: "Spring", index: 2 },
+  { value: "April", label: "April", season: "Spring", index: 3 },
+  { value: "May", label: "May", season: "Summer", index: 4 },
+  { value: "June", label: "June", season: "Summer", index: 5 },
+  { value: "July", label: "July", season: "Monsoon", index: 6 },
+  { value: "August", label: "August", season: "Monsoon", index: 7 },
+  { value: "September", label: "September", season: "Monsoon", index: 8 },
+  { value: "October", label: "October", season: "Autumn", index: 9 },
+  { value: "November", label: "November", season: "Autumn", index: 10 },
+  { value: "December", label: "December", season: "Winter", index: 11 },
 ];
 
 const getMonthForecastData = (month: string, medicine: string) => {
-  // Season-based multipliers
-  const seasonalMultipliers: Record<string, Record<string, number>> = {
-    "Winter": {
-      "Electral (ORS)": 0.8,
-      "Neutrogena Sunscreen": 0.7,
-      "Digene (Antacid)": 1.1,
-      "Crocin (Paracetamol)": 1.3,
-      "Livogen (Vitamin)": 1.2,
-      "Benadryl Syrup (Cough)": 1.5,
-      "Dolo 650 (Cough & Cold)": 1.6,
-      "Cetirizine (Anti-allergy)": 1.2,
-    },
-    "Summer": {
-      "Electral (ORS)": 1.8,
-      "Neutrogena Sunscreen": 1.9,
-      "Digene (Antacid)": 1.2,
-      "Crocin (Paracetamol)": 0.9,
-      "Livogen (Vitamin)": 1.0,
-      "Benadryl Syrup (Cough)": 0.6,
-      "Dolo 650 (Cough & Cold)": 0.7,
-      "Cetirizine (Anti-allergy)": 1.1,
-    },
-    "Monsoon": {
-      "Electral (ORS)": 1.2,
-      "Neutrogena Sunscreen": 0.8,
-      "Digene (Antacid)": 1.0,
-      "Crocin (Paracetamol)": 1.4,
-      "Livogen (Vitamin)": 1.1,
-      "Benadryl Syrup (Cough)": 1.7,
-      "Dolo 650 (Cough & Cold)": 1.8,
-      "Cetirizine (Anti-allergy)": 1.4,
-    },
-    "Spring": {
-      "Electral (ORS)": 1.0,
-      "Neutrogena Sunscreen": 1.2,
-      "Digene (Antacid)": 1.0,
-      "Crocin (Paracetamol)": 1.0,
-      "Livogen (Vitamin)": 1.1,
-      "Benadryl Syrup (Cough)": 1.0,
-      "Dolo 650 (Cough & Cold)": 1.0,
-      "Cetirizine (Anti-allergy)": 1.5,
-    },
-    "Autumn": {
-      "Electral (ORS)": 0.9,
-      "Neutrogena Sunscreen": 1.0,
-      "Digene (Antacid)": 1.0,
-      "Crocin (Paracetamol)": 1.1,
-      "Livogen (Vitamin)": 1.0,
-      "Benadryl Syrup (Cough)": 1.2,
-      "Dolo 650 (Cough & Cold)": 1.2,
-      "Cetirizine (Anti-allergy)": 1.6,
-    },
-  };
-
   const monthData = months.find((m) => m.value === month);
   const season = monthData?.season || "Spring";
+  const monthIndex = monthData?.index || 0;
+  
   const baseUnits = 250;
-  const multiplier = seasonalMultipliers[season][medicine] || 1.0;
-  const units = Math.round(baseUnits * multiplier);
-  const pricePerUnit = 50;
-  const revenue = units * pricePerUnit;
+  const medicineMultiplier = getMedicineMultiplier(medicine);
+  const seasonalPattern = getSeasonalPattern(medicine);
+  const seasonalFactor = seasonalPattern[monthIndex];
+  
+  const units = Math.round(baseUnits * medicineMultiplier * seasonalFactor);
+  const pricePerUnit = 50 + Math.random() * 30;
+  const revenue = Math.round(units * pricePerUnit);
 
   return { forecast_units: units, revenue, season };
 };

@@ -36,6 +36,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { defaultMedicines, getMedicineMultiplier } from "@/constants/medicines";
 
 const weatherOptions = [
   { value: "Hot", label: "Hot Weather", icon: Sun, color: "text-orange-500" },
@@ -43,54 +44,52 @@ const weatherOptions = [
   { value: "Rainy", label: "Rainy", icon: CloudRain, color: "text-blue-500" },
 ];
 
-const defaultMedicines = [
-  "Electral (ORS)",
-  "Neutrogena Sunscreen",
-  "Digene (Antacid)",
-  "Crocin (Paracetamol)",
-  "Livogen (Vitamin)",
-  "Benadryl Syrup (Cough)",
-  "Dolo 650 (Cough & Cold)",
-  "Cetirizine (Anti-allergy)",
-];
-
+// Dynamic forecast calculation based on medicine category
 const getForecastData = (weather: string, medicine: string) => {
-  const baseUnits: Record<string, Record<string, number>> = {
+  const baseUnits = 200;
+  const multiplier = getMedicineMultiplier(medicine);
+  
+  // Weather impact factors
+  const weatherFactors: Record<string, Record<string, number>> = {
     "Hot": {
-      "Electral (ORS)": 450,
-      "Neutrogena Sunscreen": 380,
-      "Digene (Antacid)": 220,
-      "Crocin (Paracetamol)": 180,
-      "Livogen (Vitamin)": 150,
-      "Benadryl Syrup (Cough)": 90,
-      "Dolo 650 (Cough & Cold)": 100,
-      "Cetirizine (Anti-allergy)": 140,
+      summer: 1.8,   // ORS, Sunscreen
+      cold: 0.4,     // Cough medicines
+      general: 0.9,  // General medicines
+      allergy: 1.1,  // Allergy medicines
     },
     "Cloudy": {
-      "Electral (ORS)": 200,
-      "Neutrogena Sunscreen": 150,
-      "Digene (Antacid)": 250,
-      "Crocin (Paracetamol)": 220,
-      "Livogen (Vitamin)": 180,
-      "Benadryl Syrup (Cough)": 150,
-      "Dolo 650 (Cough & Cold)": 160,
-      "Cetirizine (Anti-allergy)": 190,
+      summer: 0.6,
+      cold: 0.8,
+      general: 1.0,
+      allergy: 1.2,
     },
     "Rainy": {
-      "Electral (ORS)": 120,
-      "Neutrogena Sunscreen": 80,
-      "Digene (Antacid)": 180,
-      "Crocin (Paracetamol)": 320,
-      "Livogen (Vitamin)": 200,
-      "Benadryl Syrup (Cough)": 420,
-      "Dolo 650 (Cough & Cold)": 450,
-      "Cetirizine (Anti-allergy)": 280,
+      summer: 0.3,
+      cold: 1.8,
+      general: 1.0,
+      allergy: 1.4,
     },
   };
 
-  const pricePerUnit = 50;
-  const units = baseUnits[weather][medicine] || 0;
-  const revenue = units * pricePerUnit;
+  // Determine medicine category
+  let category = "general";
+  if (medicine.toLowerCase().includes("ors") || medicine.toLowerCase().includes("electral") || 
+      medicine.toLowerCase().includes("sunscreen") || medicine.toLowerCase().includes("eno")) {
+    category = "summer";
+  } else if (medicine.toLowerCase().includes("cough") || medicine.toLowerCase().includes("cold") ||
+             medicine.toLowerCase().includes("benadryl") || medicine.toLowerCase().includes("dolo") ||
+             medicine.toLowerCase().includes("crocin") || medicine.toLowerCase().includes("sinarest") ||
+             medicine.toLowerCase().includes("vicks")) {
+    category = "cold";
+  } else if (medicine.toLowerCase().includes("allergy") || medicine.toLowerCase().includes("cetirizine") ||
+             medicine.toLowerCase().includes("allegra") || medicine.toLowerCase().includes("montair")) {
+    category = "allergy";
+  }
+
+  const weatherFactor = weatherFactors[weather]?.[category] || 1.0;
+  const units = Math.round(baseUnits * multiplier * weatherFactor);
+  const pricePerUnit = 50 + Math.random() * 30;
+  const revenue = Math.round(units * pricePerUnit);
 
   return { forecast_units: units, revenue };
 };

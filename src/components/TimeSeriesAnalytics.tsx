@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, BarChart, Bar, ComposedChart, ReferenceLine } from "recharts";
 import { TrendingUp, TrendingDown, AlertTriangle, Activity, BarChart3, Layers, ArrowUpDown } from "lucide-react";
+import { getSeasonalPattern, getMedicineMultiplier } from "@/constants/medicines";
 
 interface TimeSeriesAnalyticsProps {
   medicines: string[];
@@ -12,33 +13,11 @@ interface TimeSeriesAnalyticsProps {
 
 // Generate realistic historical sales data
 const generateHistoricalData = (medicine: string) => {
-  const baseMultipliers: Record<string, number> = {
-    "Electral (ORS)": 1.2,
-    "Neutrogena Sunscreen": 1.1,
-    "Digene (Antacid)": 0.9,
-    "Crocin (Paracetamol)": 1.3,
-    "Livogen (Vitamin)": 0.8,
-    "Benadryl Syrup (Cough)": 1.0,
-    "Dolo 650 (Cough & Cold)": 1.4,
-    "Cetirizine (Anti-allergy)": 1.1,
-  };
-  
-  const seasonalPatterns: Record<string, number[]> = {
-    "Electral (ORS)": [0.6, 0.7, 0.9, 1.1, 1.4, 1.5, 1.3, 1.2, 1.0, 0.8, 0.7, 0.6],
-    "Neutrogena Sunscreen": [0.5, 0.6, 0.9, 1.2, 1.5, 1.6, 1.4, 1.3, 1.0, 0.7, 0.5, 0.4],
-    "Crocin (Paracetamol)": [1.3, 1.2, 1.0, 0.8, 0.7, 0.6, 0.8, 0.9, 1.0, 1.1, 1.3, 1.4],
-    "Benadryl Syrup (Cough)": [1.4, 1.3, 1.1, 0.8, 0.6, 0.5, 0.7, 0.8, 1.0, 1.2, 1.4, 1.5],
-    "Dolo 650 (Cough & Cold)": [1.5, 1.4, 1.1, 0.8, 0.6, 0.5, 0.7, 0.9, 1.1, 1.3, 1.5, 1.6],
-    "Cetirizine (Anti-allergy)": [0.8, 0.9, 1.2, 1.4, 1.3, 1.1, 0.9, 0.8, 1.0, 1.2, 1.0, 0.8],
-    "Digene (Antacid)": [1.0, 1.0, 1.1, 1.1, 1.0, 0.9, 0.9, 1.0, 1.1, 1.2, 1.1, 1.0],
-    "Livogen (Vitamin)": [1.1, 1.0, 0.9, 0.9, 1.0, 1.1, 1.1, 1.0, 0.9, 0.9, 1.0, 1.1],
-  };
-
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const years = [2022, 2023, 2024];
   const baseUnits = 1000;
-  const multiplier = baseMultipliers[medicine] || 1;
-  const pattern = seasonalPatterns[medicine] || Array(12).fill(1);
+  const multiplier = getMedicineMultiplier(medicine);
+  const pattern = getSeasonalPattern(medicine);
   
   const data: Array<{
     period: string;
