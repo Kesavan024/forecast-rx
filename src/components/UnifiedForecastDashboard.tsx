@@ -2,7 +2,8 @@ import { useState, useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CloudRain, Calendar, TrendingUp, Package, Activity, Filter } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { CloudRain, Calendar, TrendingUp, Package, Activity, Filter, Search } from "lucide-react";
 import WeatherForecast from "./WeatherForecast";
 import MonthBasedForecast from "./MonthBasedForecast";
 import FutureStockPrediction from "./FutureStockPrediction";
@@ -15,13 +16,21 @@ type CategoryName = typeof categoryNames[number];
 
 const UnifiedForecastDashboard = () => {
   const [selectedCategory, setSelectedCategory] = useState<CategoryName>("All Categories");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const filteredMedicines = useMemo(() => {
-    if (selectedCategory === "All Categories") {
-      return defaultMedicines;
+    let medicines = selectedCategory === "All Categories"
+      ? defaultMedicines
+      : medicineCategories[selectedCategory as keyof typeof medicineCategories] || defaultMedicines;
+    
+    if (searchQuery.trim()) {
+      medicines = medicines.filter(med => 
+        med.toLowerCase().includes(searchQuery.toLowerCase())
+      );
     }
-    return medicineCategories[selectedCategory as keyof typeof medicineCategories] || defaultMedicines;
-  }, [selectedCategory]);
+    
+    return medicines;
+  }, [selectedCategory, searchQuery]);
 
   return (
     <div className="space-y-6">
@@ -38,20 +47,31 @@ const UnifiedForecastDashboard = () => {
                 Compare predictions across three different forecasting methods: weather-based, seasonal, and long-term stock predictions
               </CardDescription>
             </div>
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <Select value={selectedCategory} onValueChange={(value) => setSelectedCategory(value as CategoryName)}>
-                <SelectTrigger className="w-[200px] bg-background">
-                  <SelectValue placeholder="Filter by category" />
-                </SelectTrigger>
-                <SelectContent className="bg-background border-border">
-                  {categoryNames.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search medicines..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 w-full sm:w-[200px] bg-background"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-muted-foreground hidden sm:block" />
+                <Select value={selectedCategory} onValueChange={(value) => setSelectedCategory(value as CategoryName)}>
+                  <SelectTrigger className="w-full sm:w-[180px] bg-background">
+                    <SelectValue placeholder="Filter by category" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border-border">
+                    {categoryNames.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
         </CardHeader>
