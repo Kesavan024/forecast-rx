@@ -1,29 +1,59 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CloudRain, Calendar, TrendingUp, Package, Activity } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CloudRain, Calendar, TrendingUp, Package, Activity, Filter } from "lucide-react";
 import WeatherForecast from "./WeatherForecast";
 import MonthBasedForecast from "./MonthBasedForecast";
 import FutureStockPrediction from "./FutureStockPrediction";
 import MedicalScans from "./MedicalScans";
 import TimeSeriesAnalytics from "./TimeSeriesAnalytics";
-import { defaultMedicines } from "@/constants/medicines";
+import { defaultMedicines, medicineCategories } from "@/constants/medicines";
+
+const categoryNames = ["All Categories", ...Object.keys(medicineCategories)] as const;
+type CategoryName = typeof categoryNames[number];
 
 const UnifiedForecastDashboard = () => {
-  const [medicines] = useState<string[]>(defaultMedicines);
+  const [selectedCategory, setSelectedCategory] = useState<CategoryName>("All Categories");
+
+  const filteredMedicines = useMemo(() => {
+    if (selectedCategory === "All Categories") {
+      return defaultMedicines;
+    }
+    return medicineCategories[selectedCategory as keyof typeof medicineCategories] || defaultMedicines;
+  }, [selectedCategory]);
 
   return (
     <div className="space-y-6">
       {/* Overview Card */}
       <Card className="shadow-strong border-border/50 bg-gradient-card">
         <CardHeader>
-          <CardTitle className="text-2xl flex items-center gap-2">
-            <Package className="h-6 w-6 text-primary" />
-            Unified Forecasting Dashboard
-          </CardTitle>
-          <CardDescription>
-            Compare predictions across three different forecasting methods: weather-based, seasonal, and long-term stock predictions
-          </CardDescription>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <CardTitle className="text-2xl flex items-center gap-2">
+                <Package className="h-6 w-6 text-primary" />
+                Unified Forecasting Dashboard
+              </CardTitle>
+              <CardDescription className="mt-1">
+                Compare predictions across three different forecasting methods: weather-based, seasonal, and long-term stock predictions
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <Select value={selectedCategory} onValueChange={(value) => setSelectedCategory(value as CategoryName)}>
+                <SelectTrigger className="w-[200px] bg-background">
+                  <SelectValue placeholder="Filter by category" />
+                </SelectTrigger>
+                <SelectContent className="bg-background border-border">
+                  {categoryNames.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -92,19 +122,19 @@ const UnifiedForecastDashboard = () => {
         </TabsList>
 
         <TabsContent value="month" className="mt-6">
-          <MonthBasedForecast medicines={medicines} />
+          <MonthBasedForecast medicines={filteredMedicines} />
         </TabsContent>
 
         <TabsContent value="weather" className="mt-6">
-          <WeatherForecast medicines={medicines} isStandaloneView={false} />
+          <WeatherForecast medicines={filteredMedicines} isStandaloneView={false} />
         </TabsContent>
 
         <TabsContent value="future" className="mt-6">
-          <FutureStockPrediction medicines={medicines} />
+          <FutureStockPrediction medicines={filteredMedicines} />
         </TabsContent>
 
         <TabsContent value="analytics" className="mt-6">
-          <TimeSeriesAnalytics medicines={medicines} />
+          <TimeSeriesAnalytics medicines={filteredMedicines} />
         </TabsContent>
       </Tabs>
 
