@@ -9,6 +9,7 @@ import MonthBasedForecast from "./MonthBasedForecast";
 import FutureStockPrediction from "./FutureStockPrediction";
 import MedicalScans from "./MedicalScans";
 import TimeSeriesAnalytics from "./TimeSeriesAnalytics";
+import DiseaseSearch from "./DiseaseSearch";
 import { defaultMedicines, medicineCategories } from "@/constants/medicines";
 
 const categoryNames = ["All Categories", ...Object.keys(medicineCategories)] as const;
@@ -157,6 +158,9 @@ const UnifiedForecastDashboard = () => {
           <TimeSeriesAnalytics medicines={filteredMedicines} />
         </TabsContent>
       </Tabs>
+
+      {/* Disease Search Section */}
+      <DiseaseSearch />
 
       {/* Medical Scans Section */}
       <MedicalScans />
