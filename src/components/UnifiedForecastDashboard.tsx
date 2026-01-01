@@ -1,9 +1,10 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { CloudRain, Calendar, TrendingUp, Package, Activity, Filter, Search } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CloudRain, Calendar, TrendingUp, Package, Activity, Filter, Search, Pill, Folder } from "lucide-react";
 import WeatherForecast from "./WeatherForecast";
 import MonthBasedForecast from "./MonthBasedForecast";
 import FutureStockPrediction from "./FutureStockPrediction";
@@ -13,10 +14,42 @@ import { defaultMedicines, medicineCategories } from "@/constants/medicines";
 
 const categoryNames = ["All Categories", ...Object.keys(medicineCategories)] as const;
 type CategoryName = typeof categoryNames[number];
-
 const UnifiedForecastDashboard = () => {
   const [selectedCategory, setSelectedCategory] = useState<CategoryName>("All Categories");
   const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Get suggestions based on search query
+  const suggestions = useMemo(() => {
+    if (!searchQuery.trim()) return { medicines: [], categories: [] };
+    
+    const query = searchQuery.toLowerCase();
+    
+    // Filter matching medicines (limit to 5)
+    const matchingMedicines = defaultMedicines
+      .filter(med => med.toLowerCase().includes(query))
+      .slice(0, 5);
+    
+    // Filter matching categories
+    const matchingCategories = Object.keys(medicineCategories)
+      .filter(cat => cat.toLowerCase().includes(query));
+    
+    return { medicines: matchingMedicines, categories: matchingCategories };
+  }, [searchQuery]);
+
+  const hasSuggestions = suggestions.medicines.length > 0 || suggestions.categories.length > 0;
+
+  const handleSelectMedicine = (medicine: string) => {
+    setSearchQuery(medicine);
+    setIsSearchOpen(false);
+  };
+
+  const handleSelectCategory = (category: string) => {
+    setSelectedCategory(category as CategoryName);
+    setSearchQuery("");
+    setIsSearchOpen(false);
+  };
 
   const filteredMedicines = useMemo(() => {
     let medicines = selectedCategory === "All Categories"
@@ -48,15 +81,62 @@ const UnifiedForecastDashboard = () => {
               </CardDescription>
             </div>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search medicines..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 w-full sm:w-[200px] bg-background"
-                />
-              </div>
+              <Popover open={isSearchOpen && hasSuggestions} onOpenChange={setIsSearchOpen}>
+                <PopoverTrigger asChild>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      ref={inputRef}
+                      placeholder="Search medicines..."
+                      value={searchQuery}
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        setIsSearchOpen(true);
+                      }}
+                      onFocus={() => setIsSearchOpen(true)}
+                      className="pl-9 w-full sm:w-[200px] bg-background"
+                    />
+                  </div>
+                </PopoverTrigger>
+                <PopoverContent 
+                  className="w-[200px] p-0 bg-popover border-border z-50" 
+                  align="start"
+                  onOpenAutoFocus={(e) => e.preventDefault()}
+                >
+                  <div className="max-h-[300px] overflow-y-auto">
+                    {suggestions.categories.length > 0 && (
+                      <div className="p-2 border-b border-border">
+                        <p className="text-xs font-medium text-muted-foreground px-2 pb-1">Categories</p>
+                        {suggestions.categories.map((category) => (
+                          <button
+                            key={category}
+                            className="w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors text-left"
+                            onClick={() => handleSelectCategory(category)}
+                          >
+                            <Folder className="h-3.5 w-3.5 text-primary" />
+                            <span>{category}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {suggestions.medicines.length > 0 && (
+                      <div className="p-2">
+                        <p className="text-xs font-medium text-muted-foreground px-2 pb-1">Medicines</p>
+                        {suggestions.medicines.map((medicine) => (
+                          <button
+                            key={medicine}
+                            className="w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors text-left"
+                            onClick={() => handleSelectMedicine(medicine)}
+                          >
+                            <Pill className="h-3.5 w-3.5 text-chart-1" />
+                            <span className="truncate">{medicine}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
               <div className="flex items-center gap-2">
                 <Filter className="h-4 w-4 text-muted-foreground hidden sm:block" />
                 <Select value={selectedCategory} onValueChange={(value) => setSelectedCategory(value as CategoryName)}>
