@@ -4,34 +4,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { CloudRain, Calendar, TrendingUp, Package, Activity, Filter, Search, Pill, Folder, AlertTriangle, IndianRupee } from "lucide-react";
+import { CloudRain, Calendar, TrendingUp, Package, Activity, Filter, Search, Pill, Folder, AlertTriangle } from "lucide-react";
 import WeatherForecast from "./WeatherForecast";
 import MonthBasedForecast from "./MonthBasedForecast";
 import FutureStockPrediction from "./FutureStockPrediction";
 import MedicalScans from "./MedicalScans";
 import TimeSeriesAnalytics from "./TimeSeriesAnalytics";
 import StockOutRiskPrediction from "./StockOutRiskPrediction";
-import LowSellingProducts from "./LowSellingProducts";
-import { defaultMedicines, medicineCategories, getMedicineMultiplier } from "@/constants/medicines";
+import { defaultMedicines, medicineCategories } from "@/constants/medicines";
 
 const categoryNames = ["All Categories", ...Object.keys(medicineCategories)] as const;
 type CategoryName = typeof categoryNames[number];
-
-// Calculate estimated revenue for a medicine based on base price and multiplier
-const calculateMedicineRevenue = (medicine: string): number => {
-  const basePrice = 50;
-  const baseUnits = 100;
-  const multiplier = getMedicineMultiplier(medicine);
-  return basePrice * baseUnits * multiplier;
-};
-
 const UnifiedForecastDashboard = () => {
   const [selectedCategory, setSelectedCategory] = useState<CategoryName>("All Categories");
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [showLowSellingOnly, setShowLowSellingOnly] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Get suggestions based on search query
@@ -76,28 +63,8 @@ const UnifiedForecastDashboard = () => {
       );
     }
     
-    // Filter for low-selling products (revenue ₹1,000 - ₹2,000)
-    if (showLowSellingOnly) {
-      medicines = medicines.filter(med => {
-        const revenue = calculateMedicineRevenue(med);
-        return revenue >= 1000 && revenue <= 2000;
-      });
-    }
-    
     return medicines;
-  }, [selectedCategory, searchQuery, showLowSellingOnly]);
-
-  // Get low-selling products data
-  const lowSellingProducts = useMemo(() => {
-    return defaultMedicines
-      .map(med => ({
-        medicine: med,
-        revenue: calculateMedicineRevenue(med),
-        multiplier: getMedicineMultiplier(med)
-      }))
-      .filter(item => item.revenue >= 1000 && item.revenue <= 2000)
-      .sort((a, b) => a.revenue - b.revenue);
-  }, []);
+  }, [selectedCategory, searchQuery]);
 
   return (
     <div className="space-y-6">
@@ -171,18 +138,6 @@ const UnifiedForecastDashboard = () => {
                   </div>
                 </PopoverContent>
               </Popover>
-              <div className="flex items-center gap-2 border border-border rounded-md px-3 py-2 bg-background">
-                <Switch 
-                  id="low-selling-filter" 
-                  checked={showLowSellingOnly}
-                  onCheckedChange={setShowLowSellingOnly}
-                />
-                <Label htmlFor="low-selling-filter" className="text-sm cursor-pointer flex items-center gap-1">
-                  <IndianRupee className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">Low Selling (₹1K-2K)</span>
-                  <span className="sm:hidden">₹1K-2K</span>
-                </Label>
-              </div>
               <div className="flex items-center gap-2">
                 <Filter className="h-4 w-4 text-muted-foreground hidden sm:block" />
                 <Select value={selectedCategory} onValueChange={(value) => setSelectedCategory(value as CategoryName)}>
@@ -252,23 +207,13 @@ const UnifiedForecastDashboard = () => {
                 Predict stock-out risks using forecasted demand
               </p>
             </div>
-            
-            <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/30">
-              <div className="flex items-center gap-2 mb-2">
-                <IndianRupee className="h-5 w-5 text-amber-500" />
-                <h3 className="font-semibold text-sm">Low-Selling Products</h3>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Identify products with revenue ₹1,000-₹2,000
-              </p>
-            </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Tabbed Forecasting Interface */}
       <Tabs defaultValue="month" className="w-full">
-        <TabsList className="grid w-full grid-cols-6 h-auto">
+        <TabsList className="grid w-full grid-cols-5 h-auto">
           <TabsTrigger value="month" className="flex items-center gap-1 py-3">
             <Calendar className="h-4 w-4" />
             <span className="hidden sm:inline">Seasonal</span>
@@ -288,10 +233,6 @@ const UnifiedForecastDashboard = () => {
           <TabsTrigger value="stockout" className="flex items-center gap-1 py-3">
             <AlertTriangle className="h-4 w-4" />
             <span className="hidden sm:inline">Stock Risk</span>
-          </TabsTrigger>
-          <TabsTrigger value="lowselling" className="flex items-center gap-1 py-3">
-            <IndianRupee className="h-4 w-4" />
-            <span className="hidden sm:inline">Low Selling</span>
           </TabsTrigger>
         </TabsList>
 
@@ -313,10 +254,6 @@ const UnifiedForecastDashboard = () => {
 
         <TabsContent value="stockout" className="mt-6">
           <StockOutRiskPrediction medicines={filteredMedicines} />
-        </TabsContent>
-
-        <TabsContent value="lowselling" className="mt-6">
-          <LowSellingProducts />
         </TabsContent>
       </Tabs>
 
