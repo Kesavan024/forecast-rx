@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Download, Smartphone, Check, Share } from "lucide-react";
+import { ArrowLeft, Download, Smartphone, Check, Share, Monitor, Laptop } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -14,6 +14,7 @@ const Install = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
 
   useEffect(() => {
     // Check if already installed
@@ -24,6 +25,10 @@ const Install = () => {
     // Check if iOS
     const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent);
     setIsIOS(isIOSDevice);
+
+    // Check if desktop
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    setIsDesktop(!isMobile);
 
     // Listen for the beforeinstallprompt event
     const handleBeforeInstall = (e: Event) => {
@@ -80,7 +85,11 @@ const Install = () => {
           <Card className="overflow-hidden">
             <div className="bg-gradient-to-br from-primary/20 to-primary/5 p-8 flex items-center justify-center">
               <div className="w-24 h-24 rounded-2xl bg-card shadow-lg flex items-center justify-center">
-                <Smartphone className="h-12 w-12 text-primary" />
+                {isDesktop ? (
+                  <Monitor className="h-12 w-12 text-primary" />
+                ) : (
+                  <Smartphone className="h-12 w-12 text-primary" />
+                )}
               </div>
             </div>
             <CardHeader className="text-center">
@@ -102,7 +111,66 @@ const Install = () => {
                   <div>
                     <h3 className="font-semibold text-foreground">App Installed!</h3>
                     <p className="text-sm text-muted-foreground">
-                      MediCast is now on your home screen
+                      MediCast is now installed on your {isDesktop ? "computer" : "home screen"}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ) : deferredPrompt ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Download className="h-5 w-5" />
+                  Install App
+                </CardTitle>
+                <CardDescription>
+                  Add MediCast to your {isDesktop ? "desktop" : "home screen"} for quick access
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button onClick={handleInstall} className="w-full gap-2">
+                  <Download className="h-4 w-4" />
+                  Install MediCast
+                </Button>
+              </CardContent>
+            </Card>
+          ) : isDesktop ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Laptop className="h-5 w-5" />
+                  Install on PC / Laptop
+                </CardTitle>
+                <CardDescription>
+                  Follow these steps to install MediCast as a desktop app
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <p className="text-sm font-medium text-foreground">For Chrome / Edge:</p>
+                  <div className="flex items-start gap-3">
+                    <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-sm font-bold">
+                      1
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Look for the <strong>install icon</strong> (⊕) in the address bar, or click the <strong>menu</strong> (three dots)
+                    </p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-sm font-bold">
+                      2
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Select <strong>"Install MediCast Analytics"</strong> or <strong>"Install app"</strong>
+                    </p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-sm font-bold">
+                      3
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Click <strong>"Install"</strong> to confirm. The app will open in its own window!
                     </p>
                   </div>
                 </div>
@@ -146,24 +214,6 @@ const Install = () => {
                     </p>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          ) : deferredPrompt ? (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Download className="h-5 w-5" />
-                  Install App
-                </CardTitle>
-                <CardDescription>
-                  Add MediCast to your home screen for quick access
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button onClick={handleInstall} className="w-full gap-2">
-                  <Download className="h-4 w-4" />
-                  Install MediCast
-                </Button>
               </CardContent>
             </Card>
           ) : (
@@ -217,7 +267,7 @@ const Install = () => {
               <ul className="space-y-2">
                 <li className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Check className="h-4 w-4 text-green-500" />
-                  Quick access from your home screen
+                  {isDesktop ? "Quick access from your desktop or Start menu" : "Quick access from your home screen"}
                 </li>
                 <li className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Check className="h-4 w-4 text-green-500" />
@@ -225,7 +275,7 @@ const Install = () => {
                 </li>
                 <li className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Check className="h-4 w-4 text-green-500" />
-                  Full-screen experience without browser UI
+                  {isDesktop ? "Runs in its own window without browser tabs" : "Full-screen experience without browser UI"}
                 </li>
                 <li className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Check className="h-4 w-4 text-green-500" />
