@@ -4,13 +4,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CloudRain, Calendar, TrendingUp, Package, Activity, Filter, Search, Pill, Folder, AlertTriangle } from "lucide-react";
+import { CloudRain, Calendar, TrendingUp, Package, Activity, Filter, Search, Pill, Folder } from "lucide-react";
 import WeatherForecast from "./WeatherForecast";
 import MonthBasedForecast from "./MonthBasedForecast";
 import FutureStockPrediction from "./FutureStockPrediction";
 import MedicalScans from "./MedicalScans";
 import TimeSeriesAnalytics from "./TimeSeriesAnalytics";
-import StockOutRiskPrediction from "./StockOutRiskPrediction";
 import { defaultMedicines, medicineCategories } from "@/constants/medicines";
 
 const categoryNames = ["All Categories", ...Object.keys(medicineCategories)] as const;
@@ -198,22 +197,13 @@ const UnifiedForecastDashboard = () => {
               </p>
             </div>
             
-            <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/30">
-              <div className="flex items-center gap-2 mb-2">
-                <AlertTriangle className="h-5 w-5 text-destructive" />
-                <h3 className="font-semibold text-sm">Stock-Out Risk</h3>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Predict stock-out risks using forecasted demand
-              </p>
-            </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Tabbed Forecasting Interface */}
       <Tabs defaultValue="month" className="w-full">
-        <TabsList className="grid w-full grid-cols-5 h-auto">
+        <TabsList className="grid w-full grid-cols-4 h-auto">
           <TabsTrigger value="month" className="flex items-center gap-1 py-3">
             <Calendar className="h-4 w-4" />
             <span className="hidden sm:inline">Seasonal</span>
@@ -229,10 +219,6 @@ const UnifiedForecastDashboard = () => {
           <TabsTrigger value="analytics" className="flex items-center gap-1 py-3">
             <Activity className="h-4 w-4" />
             <span className="hidden sm:inline">Analytics</span>
-          </TabsTrigger>
-          <TabsTrigger value="stockout" className="flex items-center gap-1 py-3">
-            <AlertTriangle className="h-4 w-4" />
-            <span className="hidden sm:inline">Stock Risk</span>
           </TabsTrigger>
         </TabsList>
 
@@ -252,9 +238,6 @@ const UnifiedForecastDashboard = () => {
           <TimeSeriesAnalytics medicines={filteredMedicines} />
         </TabsContent>
 
-        <TabsContent value="stockout" className="mt-6">
-          <StockOutRiskPrediction medicines={filteredMedicines} />
-        </TabsContent>
       </Tabs>
 
       {/* Medical Scans Section */}
