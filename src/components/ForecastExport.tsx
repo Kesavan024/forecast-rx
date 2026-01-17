@@ -1,20 +1,31 @@
 import { useState, useEffect } from "react";
-import { Download, FileText, FileSpreadsheet, Loader2 } from "lucide-react";
+import { format } from "date-fns";
+import { Download, FileText, FileSpreadsheet, Loader2, CalendarIcon, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { exportToCSV, exportToPDF } from "@/lib/export-utils";
+import { cn } from "@/lib/utils";
 
 const ForecastExport = () => {
   const [forecasts, setForecasts] = useState<any[]>([]);
+  const [filteredForecasts, setFilteredForecasts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isExporting, setIsExporting] = useState<"csv" | "pdf" | null>(null);
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchForecasts();
   }, []);
+
+  useEffect(() => {
+    filterForecasts();
+  }, [forecasts, startDate, endDate]);
 
   const fetchForecasts = async () => {
     setIsLoading(true);
@@ -40,11 +51,34 @@ const ForecastExport = () => {
     setIsLoading(false);
   };
 
+  const filterForecasts = () => {
+    let filtered = [...forecasts];
+    
+    if (startDate) {
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+      filtered = filtered.filter(f => new Date(f.created_at) >= start);
+    }
+    
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      filtered = filtered.filter(f => new Date(f.created_at) <= end);
+    }
+    
+    setFilteredForecasts(filtered);
+  };
+
+  const clearDateFilters = () => {
+    setStartDate(undefined);
+    setEndDate(undefined);
+  };
+
   const handleExportCSV = () => {
-    if (forecasts.length === 0) {
+    if (filteredForecasts.length === 0) {
       toast({
         title: "No Data",
-        description: "No forecast data available to export.",
+        description: "No forecast data available to export for the selected date range.",
         variant: "destructive",
       });
       return;
@@ -52,11 +86,11 @@ const ForecastExport = () => {
 
     setIsExporting("csv");
     setTimeout(() => {
-      const success = exportToCSV(forecasts, "medicast_forecasts");
+      const success = exportToCSV(filteredForecasts, "medicast_forecasts");
       if (success) {
         toast({
           title: "Export Successful",
-          description: "Your forecasts have been exported as CSV.",
+          description: `Exported ${filteredForecasts.length} forecasts as CSV.`,
         });
       }
       setIsExporting(null);
@@ -64,10 +98,10 @@ const ForecastExport = () => {
   };
 
   const handleExportPDF = () => {
-    if (forecasts.length === 0) {
+    if (filteredForecasts.length === 0) {
       toast({
         title: "No Data",
-        description: "No forecast data available to export.",
+        description: "No forecast data available to export for the selected date range.",
         variant: "destructive",
       });
       return;
@@ -75,16 +109,18 @@ const ForecastExport = () => {
 
     setIsExporting("pdf");
     setTimeout(() => {
-      const success = exportToPDF(forecasts, "medicast_forecasts");
+      const success = exportToPDF(filteredForecasts, "medicast_forecasts");
       if (success) {
         toast({
           title: "Export Successful",
-          description: "Your forecasts have been exported as PDF.",
+          description: `Exported ${filteredForecasts.length} forecasts as PDF.`,
         });
       }
       setIsExporting(null);
     }, 500);
   };
+
+  const hasDateFilter = startDate || endDate;
 
   return (
     <Card className="shadow-strong border-border/50 bg-gradient-card">
@@ -104,16 +140,99 @@ const ForecastExport = () => {
           </div>
         ) : (
           <>
-            <div className="p-4 rounded-lg bg-secondary/50 border border-border/30">
-              <p className="text-sm text-muted-foreground">
-                <span className="font-medium text-foreground">{forecasts.length}</span> forecast records available for export
-              </p>
+            {/* Date Range Filters */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-foreground">Date Range Filter</label>
+                {hasDateFilter && (
+                  <Button variant="ghost" size="sm" onClick={clearDateFilters} className="h-7 text-xs">
+                    <X className="h-3 w-3 mr-1" />
+                    Clear filters
+                  </Button>
+                )}
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs text-muted-foreground">From</label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !startDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {startDate ? format(startDate, "PPP") : "Start date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={startDate}
+                        onSelect={setStartDate}
+                        disabled={(date) => (endDate ? date > endDate : false) || date > new Date()}
+                        initialFocus
+                        className={cn("p-3 pointer-events-auto")}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs text-muted-foreground">To</label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !endDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {endDate ? format(endDate, "PPP") : "End date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={endDate}
+                        onSelect={setEndDate}
+                        disabled={(date) => (startDate ? date < startDate : false) || date > new Date()}
+                        initialFocus
+                        className={cn("p-3 pointer-events-auto")}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
             </div>
 
+            {/* Summary */}
+            <div className="p-4 rounded-lg bg-secondary/50 border border-border/30">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">
+                  <span className="font-medium text-foreground">{filteredForecasts.length}</span> of {forecasts.length} forecast records
+                  {hasDateFilter && " (filtered)"}
+                </p>
+                {hasDateFilter && (
+                  <span className="text-xs text-muted-foreground">
+                    {startDate && format(startDate, "MMM d, yyyy")}
+                    {startDate && endDate && " - "}
+                    {endDate && format(endDate, "MMM d, yyyy")}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Export Buttons */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Button
                 onClick={handleExportCSV}
-                disabled={isExporting !== null || forecasts.length === 0}
+                disabled={isExporting !== null || filteredForecasts.length === 0}
                 variant="outline"
                 className="h-auto py-4 flex flex-col items-center gap-2"
               >
@@ -130,7 +249,7 @@ const ForecastExport = () => {
 
               <Button
                 onClick={handleExportPDF}
-                disabled={isExporting !== null || forecasts.length === 0}
+                disabled={isExporting !== null || filteredForecasts.length === 0}
                 variant="outline"
                 className="h-auto py-4 flex flex-col items-center gap-2"
               >
