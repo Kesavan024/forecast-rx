@@ -4,12 +4,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CloudRain, Calendar, TrendingUp, Package, Activity, Filter, Search, Pill, Folder } from "lucide-react";
+import { CloudRain, Calendar, TrendingUp, Package, Activity, Filter, Search, Pill, Folder, Download } from "lucide-react";
 import WeatherForecast from "./WeatherForecast";
 import MonthBasedForecast from "./MonthBasedForecast";
 import FutureStockPrediction from "./FutureStockPrediction";
 import MedicalScans from "./MedicalScans";
 import TimeSeriesAnalytics from "./TimeSeriesAnalytics";
+import ForecastExport from "./ForecastExport";
 import { defaultMedicines, medicineCategories } from "@/constants/medicines";
 
 const categoryNames = ["All Categories", ...Object.keys(medicineCategories)] as const;
@@ -197,13 +198,23 @@ const UnifiedForecastDashboard = () => {
               </p>
             </div>
             
+            <div className="p-4 rounded-lg bg-chart-5/10 border border-chart-5/30">
+              <div className="flex items-center gap-2 mb-2">
+                <Download className="h-5 w-5 text-chart-5" />
+                <h3 className="font-semibold text-sm">Export Reports</h3>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Download forecasts as CSV or PDF reports
+              </p>
+            </div>
+            
           </div>
         </CardContent>
       </Card>
 
       {/* Tabbed Forecasting Interface */}
       <Tabs defaultValue="month" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 h-auto">
+        <TabsList className="grid w-full grid-cols-5 h-auto">
           <TabsTrigger value="month" className="flex items-center gap-1 py-3">
             <Calendar className="h-4 w-4" />
             <span className="hidden sm:inline">Seasonal</span>
@@ -219,6 +230,10 @@ const UnifiedForecastDashboard = () => {
           <TabsTrigger value="analytics" className="flex items-center gap-1 py-3">
             <Activity className="h-4 w-4" />
             <span className="hidden sm:inline">Analytics</span>
+          </TabsTrigger>
+          <TabsTrigger value="export" className="flex items-center gap-1 py-3">
+            <Download className="h-4 w-4" />
+            <span className="hidden sm:inline">Export</span>
           </TabsTrigger>
         </TabsList>
 
@@ -236,6 +251,10 @@ const UnifiedForecastDashboard = () => {
 
         <TabsContent value="analytics" className="mt-6">
           <TimeSeriesAnalytics medicines={filteredMedicines} />
+        </TabsContent>
+
+        <TabsContent value="export" className="mt-6">
+          <ForecastExport />
         </TabsContent>
 
       </Tabs>
