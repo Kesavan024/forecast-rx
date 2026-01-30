@@ -50,39 +50,6 @@ export type Database = {
         }
         Relationships: []
       }
-      medicine_sales_history: {
-        Row: {
-          category: string
-          created_at: string
-          id: string
-          medicine: string
-          revenue: number
-          sale_date: string
-          units_sold: number
-          weather_condition: string | null
-        }
-        Insert: {
-          category: string
-          created_at?: string
-          id?: string
-          medicine: string
-          revenue: number
-          sale_date: string
-          units_sold: number
-          weather_condition?: string | null
-        }
-        Update: {
-          category?: string
-          created_at?: string
-          id?: string
-          medicine?: string
-          revenue?: number
-          sale_date?: string
-          units_sold?: number
-          weather_condition?: string | null
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
           avatar_url: string | null

@@ -9,7 +9,6 @@ import NotFound from "./pages/NotFound";
 import SecuritySettings from "./pages/SecuritySettings";
 import Profile from "./pages/Profile";
 import Install from "./pages/Install";
-import ForecastHistory from "./pages/ForecastHistory";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -43,14 +42,6 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <Profile />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/history"
-            element={
-              <ProtectedRoute>
-                <ForecastHistory />
               </ProtectedRoute>
             }
           />
