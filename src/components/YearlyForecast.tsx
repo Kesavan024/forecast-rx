@@ -2,8 +2,8 @@ import { useState, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from "recharts";
-import { CalendarRange, TrendingUp, Package, IndianRupee } from "lucide-react";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { CalendarRange, TrendingUp, TrendingDown, Package, IndianRupee } from "lucide-react";
 import { getSeasonalPattern, getMedicineMultiplier } from "@/constants/medicines";
 
 interface YearlyForecastProps {
@@ -13,68 +13,37 @@ interface YearlyForecastProps {
 const years = ["2022", "2023", "2024"] as const;
 type Year = typeof years[number];
 
-// Base monthly sales data with realistic patterns
-const getYearlyData = (medicine: string, year: Year) => {
+const months = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"
+];
+
+// Generate monthly forecast data for a specific medicine and year
+const getMonthlyForecast = (medicine: string, year: Year) => {
   const seasonalPattern = getSeasonalPattern(medicine);
   const multiplier = getMedicineMultiplier(medicine);
   
-  // Year-over-year growth factors
   const yearGrowth: Record<Year, number> = {
     "2022": 0.85,
     "2023": 1.0,
     "2024": 1.15,
   };
   
-  const baseUnits = 150 + Math.floor(Math.random() * 100);
-  const pricePerUnit = 45 + Math.floor(Math.random() * 30);
-  
-  const months = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-  ];
+  // Seed random based on medicine name for consistency
+  const seed = medicine.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const baseUnits = 120 + (seed % 80);
+  const pricePerUnit = 40 + (seed % 35);
   
   return months.map((month, index) => {
-    const units = Math.round(baseUnits * multiplier * seasonalPattern[index] * yearGrowth[year] * (0.9 + Math.random() * 0.2));
+    const variance = 0.9 + ((seed + index) % 20) / 100;
+    const units = Math.round(baseUnits * multiplier * seasonalPattern[index] * yearGrowth[year] * variance);
     const revenue = units * pricePerUnit;
+    
     return {
       month,
       units,
       revenue,
-    };
-  });
-};
-
-// Get yearly totals for all medicines
-const getYearlySummary = (medicines: string[], year: Year) => {
-  return medicines.map(medicine => {
-    const monthlyData = getYearlyData(medicine, year);
-    const totalUnits = monthlyData.reduce((sum, m) => sum + m.units, 0);
-    const totalRevenue = monthlyData.reduce((sum, m) => sum + m.revenue, 0);
-    const avgUnits = Math.round(totalUnits / 12);
-    const peakMonth = monthlyData.reduce((max, m) => m.units > max.units ? m : max, monthlyData[0]);
-    
-    return {
-      medicine,
-      totalUnits,
-      totalRevenue,
-      avgUnits,
-      peakMonth: peakMonth.month,
-      peakUnits: peakMonth.units,
-    };
-  });
-};
-
-// Get comparison data across years
-const getYearComparison = (medicine: string) => {
-  return years.map(year => {
-    const monthlyData = getYearlyData(medicine, year);
-    const totalUnits = monthlyData.reduce((sum, m) => sum + m.units, 0);
-    const totalRevenue = monthlyData.reduce((sum, m) => sum + m.revenue, 0);
-    
-    return {
-      year,
-      units: totalUnits,
-      revenue: totalRevenue,
+      growth: index > 0 ? ((seasonalPattern[index] - seasonalPattern[index - 1]) / seasonalPattern[index - 1] * 100).toFixed(1) : "0.0"
     };
   });
 };
@@ -83,62 +52,82 @@ const YearlyForecast = ({ medicines }: YearlyForecastProps) => {
   const [selectedYear, setSelectedYear] = useState<Year>("2024");
   const [selectedMedicine, setSelectedMedicine] = useState(medicines[0] || "");
 
-  const yearlySummary = useMemo(() => 
-    getYearlySummary(medicines, selectedYear).sort((a, b) => b.totalRevenue - a.totalRevenue),
-    [medicines, selectedYear]
-  );
+  // Update selected medicine when medicines list changes
+  useMemo(() => {
+    if (!medicines.includes(selectedMedicine) && medicines.length > 0) {
+      setSelectedMedicine(medicines[0]);
+    }
+  }, [medicines, selectedMedicine]);
 
-  const monthlyData = useMemo(() => 
-    getYearlyData(selectedMedicine, selectedYear),
+  const forecastData = useMemo(() => 
+    getMonthlyForecast(selectedMedicine, selectedYear),
     [selectedMedicine, selectedYear]
   );
 
-  const yearComparison = useMemo(() => 
-    getYearComparison(selectedMedicine),
-    [selectedMedicine]
-  );
-
-  const totalStats = useMemo(() => {
-    const totalUnits = yearlySummary.reduce((sum, m) => sum + m.totalUnits, 0);
-    const totalRevenue = yearlySummary.reduce((sum, m) => sum + m.totalRevenue, 0);
-    return { totalUnits, totalRevenue };
-  }, [yearlySummary]);
+  const stats = useMemo(() => {
+    const totalUnits = forecastData.reduce((sum, m) => sum + m.units, 0);
+    const totalRevenue = forecastData.reduce((sum, m) => sum + m.revenue, 0);
+    const avgUnits = Math.round(totalUnits / 12);
+    const peakMonth = forecastData.reduce((max, m) => m.units > max.units ? m : max, forecastData[0]);
+    const lowMonth = forecastData.reduce((min, m) => m.units < min.units ? m : min, forecastData[0]);
+    
+    return { totalUnits, totalRevenue, avgUnits, peakMonth, lowMonth };
+  }, [forecastData]);
 
   return (
     <div className="space-y-6">
-      {/* Header with Year Selection */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-semibold flex items-center gap-2">
-            <CalendarRange className="h-5 w-5 text-primary" />
-            Yearly Forecast ({selectedYear})
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Historical sales data and forecasts from 2022 to 2024
-          </p>
-        </div>
-        <Select value={selectedYear} onValueChange={(v) => setSelectedYear(v as Year)}>
-          <SelectTrigger className="w-[140px] bg-background">
-            <SelectValue placeholder="Select year" />
-          </SelectTrigger>
-          <SelectContent className="bg-background border-border">
-            {years.map((year) => (
-              <SelectItem key={year} value={year}>
-                {year}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      {/* Header with Selection Controls */}
+      <Card className="border-border/50">
+        <CardHeader>
+          <div className="flex flex-col gap-4">
+            <div>
+              <CardTitle className="text-xl flex items-center gap-2">
+                <CalendarRange className="h-5 w-5 text-primary" />
+                Year Forecast
+              </CardTitle>
+              <CardDescription className="mt-1">
+                Select a year and medicine to view detailed monthly forecasts
+              </CardDescription>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Select value={selectedYear} onValueChange={(v) => setSelectedYear(v as Year)}>
+                <SelectTrigger className="w-full sm:w-[150px] bg-background">
+                  <SelectValue placeholder="Select year" />
+                </SelectTrigger>
+                <SelectContent className="bg-background border-border">
+                  {years.map((year) => (
+                    <SelectItem key={year} value={year}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              <Select value={selectedMedicine} onValueChange={setSelectedMedicine}>
+                <SelectTrigger className="w-full sm:w-[280px] bg-background">
+                  <SelectValue placeholder="Select medicine" />
+                </SelectTrigger>
+                <SelectContent className="bg-background border-border max-h-[300px]">
+                  {medicines.map((medicine) => (
+                    <SelectItem key={medicine} value={medicine}>
+                      {medicine}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
 
-      {/* Summary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="border-border/50">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Units</p>
-                <p className="text-2xl font-bold">{totalStats.totalUnits.toLocaleString()}</p>
+                <p className="text-2xl font-bold">{stats.totalUnits.toLocaleString()}</p>
               </div>
               <Package className="h-8 w-8 text-chart-1" />
             </div>
@@ -150,7 +139,7 @@ const YearlyForecast = ({ medicines }: YearlyForecastProps) => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Revenue</p>
-                <p className="text-2xl font-bold">₹{(totalStats.totalRevenue / 100000).toFixed(1)}L</p>
+                <p className="text-2xl font-bold">₹{stats.totalRevenue.toLocaleString()}</p>
               </div>
               <IndianRupee className="h-8 w-8 text-chart-2" />
             </div>
@@ -161,8 +150,9 @@ const YearlyForecast = ({ medicines }: YearlyForecastProps) => {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Medicines</p>
-                <p className="text-2xl font-bold">{medicines.length}</p>
+                <p className="text-sm text-muted-foreground">Peak Month</p>
+                <p className="text-lg font-bold">{stats.peakMonth.month.slice(0, 3)}</p>
+                <p className="text-xs text-muted-foreground">{stats.peakMonth.units} units</p>
               </div>
               <TrendingUp className="h-8 w-8 text-chart-3" />
             </div>
@@ -173,48 +163,44 @@ const YearlyForecast = ({ medicines }: YearlyForecastProps) => {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Avg/Medicine</p>
-                <p className="text-2xl font-bold">₹{Math.round(totalStats.totalRevenue / medicines.length).toLocaleString()}</p>
+                <p className="text-sm text-muted-foreground">Low Month</p>
+                <p className="text-lg font-bold">{stats.lowMonth.month.slice(0, 3)}</p>
+                <p className="text-xs text-muted-foreground">{stats.lowMonth.units} units</p>
               </div>
-              <CalendarRange className="h-8 w-8 text-chart-4" />
+              <TrendingDown className="h-8 w-8 text-chart-4" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Medicine Selection for Detailed View */}
+      {/* Forecast Chart */}
       <Card className="border-border/50">
         <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <CardTitle className="text-lg">Monthly Breakdown</CardTitle>
-              <CardDescription>Detailed monthly sales for selected medicine</CardDescription>
-            </div>
-            <Select value={selectedMedicine} onValueChange={setSelectedMedicine}>
-              <SelectTrigger className="w-full sm:w-[250px] bg-background">
-                <SelectValue placeholder="Select medicine" />
-              </SelectTrigger>
-              <SelectContent className="bg-background border-border max-h-[300px]">
-                {medicines.map((medicine) => (
-                  <SelectItem key={medicine} value={medicine}>
-                    {medicine}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <CardTitle className="text-lg">{selectedYear} Monthly Forecast</CardTitle>
+          <CardDescription>{selectedMedicine}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={monthlyData}>
+              <AreaChart data={forecastData}>
+                <defs>
+                  <linearGradient id="unitsGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--chart-2))" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="hsl(var(--chart-2))" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                 <XAxis 
                   dataKey="month" 
                   className="text-xs"
                   tickFormatter={(value) => value.slice(0, 3)}
                 />
-                <YAxis className="text-xs" />
+                <YAxis className="text-xs" yAxisId="left" />
+                <YAxis className="text-xs" yAxisId="right" orientation="right" />
                 <Tooltip 
                   contentStyle={{ 
                     backgroundColor: 'hsl(var(--background))', 
@@ -222,80 +208,67 @@ const YearlyForecast = ({ medicines }: YearlyForecastProps) => {
                     borderRadius: '8px'
                   }}
                   formatter={(value: number, name: string) => [
-                    name === 'revenue' ? `₹${value.toLocaleString()}` : value.toLocaleString(),
-                    name === 'revenue' ? 'Revenue' : 'Units'
+                    name === 'Revenue' ? `₹${value.toLocaleString()}` : value.toLocaleString(),
+                    name
                   ]}
                 />
                 <Legend />
-                <Bar dataKey="units" fill="hsl(var(--chart-1))" name="Units" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="revenue" fill="hsl(var(--chart-2))" name="Revenue" radius={[4, 4, 0, 0]} />
-              </BarChart>
+                <Area 
+                  yAxisId="left"
+                  type="monotone" 
+                  dataKey="units" 
+                  stroke="hsl(var(--chart-1))" 
+                  fill="url(#unitsGradient)"
+                  strokeWidth={2}
+                  name="Units"
+                />
+                <Area 
+                  yAxisId="right"
+                  type="monotone" 
+                  dataKey="revenue" 
+                  stroke="hsl(var(--chart-2))" 
+                  fill="url(#revenueGradient)"
+                  strokeWidth={2}
+                  name="Revenue"
+                />
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </CardContent>
       </Card>
 
-      {/* Year-over-Year Comparison */}
+      {/* Monthly Breakdown Table */}
       <Card className="border-border/50">
         <CardHeader>
-          <CardTitle className="text-lg">Year-over-Year Comparison</CardTitle>
-          <CardDescription>Compare {selectedMedicine} performance across 2022-2024</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[250px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={yearComparison}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis dataKey="year" className="text-xs" />
-                <YAxis className="text-xs" />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'hsl(var(--background))', 
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px'
-                  }}
-                  formatter={(value: number, name: string) => [
-                    name === 'revenue' ? `₹${value.toLocaleString()}` : value.toLocaleString(),
-                    name === 'revenue' ? 'Revenue' : 'Units'
-                  ]}
-                />
-                <Legend />
-                <Line type="monotone" dataKey="units" stroke="hsl(var(--chart-1))" strokeWidth={2} dot={{ r: 6 }} name="Units" />
-                <Line type="monotone" dataKey="revenue" stroke="hsl(var(--chart-2))" strokeWidth={2} dot={{ r: 6 }} name="Revenue" />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Top Medicines Table */}
-      <Card className="border-border/50">
-        <CardHeader>
-          <CardTitle className="text-lg">Top Performing Medicines ({selectedYear})</CardTitle>
-          <CardDescription>Ranked by total revenue</CardDescription>
+          <CardTitle className="text-lg">Monthly Breakdown</CardTitle>
+          <CardDescription>Detailed forecast for each month in {selectedYear}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Rank</TableHead>
-                  <TableHead>Medicine</TableHead>
-                  <TableHead className="text-right">Total Units</TableHead>
-                  <TableHead className="text-right">Total Revenue</TableHead>
-                  <TableHead className="text-right">Avg/Month</TableHead>
-                  <TableHead>Peak Month</TableHead>
+                  <TableHead>Month</TableHead>
+                  <TableHead className="text-right">Forecast Units</TableHead>
+                  <TableHead className="text-right">Revenue</TableHead>
+                  <TableHead className="text-right">MoM Change</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {yearlySummary.slice(0, 10).map((item, index) => (
-                  <TableRow key={item.medicine}>
-                    <TableCell className="font-medium">{index + 1}</TableCell>
-                    <TableCell className="max-w-[200px] truncate">{item.medicine}</TableCell>
-                    <TableCell className="text-right">{item.totalUnits.toLocaleString()}</TableCell>
-                    <TableCell className="text-right">₹{item.totalRevenue.toLocaleString()}</TableCell>
-                    <TableCell className="text-right">{item.avgUnits}</TableCell>
-                    <TableCell>{item.peakMonth}</TableCell>
+                {forecastData.map((row, index) => (
+                  <TableRow key={row.month}>
+                    <TableCell className="font-medium">{row.month}</TableCell>
+                    <TableCell className="text-right">{row.units.toLocaleString()}</TableCell>
+                    <TableCell className="text-right">₹{row.revenue.toLocaleString()}</TableCell>
+                    <TableCell className="text-right">
+                      {index === 0 ? (
+                        <span className="text-muted-foreground">-</span>
+                      ) : (
+                        <span className={parseFloat(row.growth) >= 0 ? "text-chart-3" : "text-destructive"}>
+                          {parseFloat(row.growth) >= 0 ? "+" : ""}{row.growth}%
+                        </span>
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
