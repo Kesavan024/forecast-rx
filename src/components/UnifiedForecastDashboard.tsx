@@ -4,13 +4,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CloudRain, Calendar, TrendingUp, Package, Activity, Filter, Search, Pill, Folder, Download } from "lucide-react";
+import { CloudRain, Calendar, TrendingUp, Package, Activity, Filter, Search, Pill, Folder, Download, CalendarRange } from "lucide-react";
 import WeatherForecast from "./WeatherForecast";
 import MonthBasedForecast from "./MonthBasedForecast";
 import FutureStockPrediction from "./FutureStockPrediction";
 import MedicalScans from "./MedicalScans";
 import TimeSeriesAnalytics from "./TimeSeriesAnalytics";
 import ForecastExport from "./ForecastExport";
+import YearlyForecast from "./YearlyForecast";
 import { defaultMedicines, medicineCategories } from "@/constants/medicines";
 
 const categoryNames = ["All Categories", ...Object.keys(medicineCategories)] as const;
@@ -157,24 +158,34 @@ const UnifiedForecastDashboard = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 rounded-lg bg-chart-1/10 border border-chart-1/30">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="p-4 rounded-lg bg-primary/10 border border-primary/30">
               <div className="flex items-center gap-2 mb-2">
-                <CloudRain className="h-5 w-5 text-chart-1" />
-                <h3 className="font-semibold text-sm">Weather-Based</h3>
+                <CalendarRange className="h-5 w-5 text-primary" />
+                <h3 className="font-semibold text-sm">Yearly (2022-2024)</h3>
               </div>
               <p className="text-xs text-muted-foreground">
-                Predict sales based on current weather conditions
+                Historical yearly sales data and trends
               </p>
             </div>
             
             <div className="p-4 rounded-lg bg-chart-2/10 border border-chart-2/30">
               <div className="flex items-center gap-2 mb-2">
                 <Calendar className="h-5 w-5 text-chart-2" />
-                <h3 className="font-semibold text-sm">Month/Season-Based</h3>
+                <h3 className="font-semibold text-sm">Seasonal</h3>
               </div>
               <p className="text-xs text-muted-foreground">
-                Forecast using seasonal patterns and monthly trends
+                Monthly trends and seasonal patterns
+              </p>
+            </div>
+            
+            <div className="p-4 rounded-lg bg-chart-1/10 border border-chart-1/30">
+              <div className="flex items-center gap-2 mb-2">
+                <CloudRain className="h-5 w-5 text-chart-1" />
+                <h3 className="font-semibold text-sm">Weather-Based</h3>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Predict based on weather conditions
               </p>
             </div>
             
@@ -184,37 +195,40 @@ const UnifiedForecastDashboard = () => {
                 <h3 className="font-semibold text-sm">12-Month Projection</h3>
               </div>
               <p className="text-xs text-muted-foreground">
-                Long-term stock predictions with range analysis
+                Long-term stock predictions
               </p>
             </div>
             
             <div className="p-4 rounded-lg bg-chart-4/10 border border-chart-4/30">
               <div className="flex items-center gap-2 mb-2">
                 <Activity className="h-5 w-5 text-chart-4" />
-                <h3 className="font-semibold text-sm">Time-Series Analytics</h3>
+                <h3 className="font-semibold text-sm">Analytics</h3>
               </div>
               <p className="text-xs text-muted-foreground">
-                Historical trends, anomaly detection & seasonal analysis
+                Trends & anomaly detection
               </p>
             </div>
             
             <div className="p-4 rounded-lg bg-chart-5/10 border border-chart-5/30">
               <div className="flex items-center gap-2 mb-2">
                 <Download className="h-5 w-5 text-chart-5" />
-                <h3 className="font-semibold text-sm">Export Reports</h3>
+                <h3 className="font-semibold text-sm">Export</h3>
               </div>
               <p className="text-xs text-muted-foreground">
-                Download forecasts as CSV or PDF reports
+                Download CSV or PDF reports
               </p>
             </div>
-            
           </div>
         </CardContent>
       </Card>
 
       {/* Tabbed Forecasting Interface */}
-      <Tabs defaultValue="month" className="w-full">
-        <TabsList className="grid w-full grid-cols-5 h-auto">
+      <Tabs defaultValue="yearly" className="w-full">
+        <TabsList className="grid w-full grid-cols-6 h-auto">
+          <TabsTrigger value="yearly" className="flex items-center gap-1 py-3">
+            <CalendarRange className="h-4 w-4" />
+            <span className="hidden sm:inline">Yearly</span>
+          </TabsTrigger>
           <TabsTrigger value="month" className="flex items-center gap-1 py-3">
             <Calendar className="h-4 w-4" />
             <span className="hidden sm:inline">Seasonal</span>
@@ -236,6 +250,10 @@ const UnifiedForecastDashboard = () => {
             <span className="hidden sm:inline">Export</span>
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="yearly" className="mt-6">
+          <YearlyForecast medicines={filteredMedicines} />
+        </TabsContent>
 
         <TabsContent value="month" className="mt-6">
           <MonthBasedForecast medicines={filteredMedicines} />
