@@ -64,6 +64,18 @@ const YearlyForecast = ({ medicines }: YearlyForecastProps) => {
     [selectedMedicine, selectedYear]
   );
 
+  const comparisonData = useMemo(() => {
+    const data2022 = getMonthlyForecast(selectedMedicine, "2022");
+    const data2023 = getMonthlyForecast(selectedMedicine, "2023");
+    const data2024 = getMonthlyForecast(selectedMedicine, "2024");
+    return months.map((month, i) => ({
+      month,
+      units2022: data2022[i].units,
+      units2023: data2023[i].units,
+      units2024: data2024[i].units,
+    }));
+  }, [selectedMedicine]);
+
   const stats = useMemo(() => {
     const totalUnits = forecastData.reduce((sum, m) => sum + m.units, 0);
     const totalRevenue = forecastData.reduce((sum, m) => sum + m.revenue, 0);
@@ -271,6 +283,94 @@ const YearlyForecast = ({ medicines }: YearlyForecastProps) => {
                     </TableCell>
                   </TableRow>
                 ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Year-over-Year Comparison */}
+      <Card className="border-border/50">
+        <CardHeader>
+          <CardTitle className="text-lg">Year-over-Year Comparison</CardTitle>
+          <CardDescription>{selectedMedicine} — 2022 vs 2023 vs 2024</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[350px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={comparisonData}>
+                <defs>
+                  <linearGradient id="y2022Gradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--chart-3))" stopOpacity={0.2}/>
+                    <stop offset="95%" stopColor="hsl(var(--chart-3))" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="y2023Gradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.2}/>
+                    <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="y2024Gradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--chart-2))" stopOpacity={0.2}/>
+                    <stop offset="95%" stopColor="hsl(var(--chart-2))" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                <XAxis dataKey="month" className="text-xs" tickFormatter={(v) => v.slice(0, 3)} />
+                <YAxis className="text-xs" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--background))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px'
+                  }}
+                  formatter={(value: number, name: string) => [value.toLocaleString() + " units", name]}
+                />
+                <Legend />
+                <Area type="monotone" dataKey="units2022" stroke="hsl(var(--chart-3))" fill="url(#y2022Gradient)" strokeWidth={2} name="2022" />
+                <Area type="monotone" dataKey="units2023" stroke="hsl(var(--chart-1))" fill="url(#y2023Gradient)" strokeWidth={2} name="2023" />
+                <Area type="monotone" dataKey="units2024" stroke="hsl(var(--chart-2))" fill="url(#y2024Gradient)" strokeWidth={2} name="2024" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Comparison Table */}
+      <Card className="border-border/50">
+        <CardHeader>
+          <CardTitle className="text-lg">Yearly Comparison Table</CardTitle>
+          <CardDescription>Side-by-side monthly units for {selectedMedicine}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Month</TableHead>
+                  <TableHead className="text-right">2022</TableHead>
+                  <TableHead className="text-right">2023</TableHead>
+                  <TableHead className="text-right">2024</TableHead>
+                  <TableHead className="text-right">Growth (22→24)</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {comparisonData.map((row) => {
+                  const growthPct = row.units2022 > 0
+                    ? (((row.units2024 - row.units2022) / row.units2022) * 100).toFixed(1)
+                    : "0.0";
+                  return (
+                    <TableRow key={row.month}>
+                      <TableCell className="font-medium">{row.month}</TableCell>
+                      <TableCell className="text-right">{row.units2022.toLocaleString()}</TableCell>
+                      <TableCell className="text-right">{row.units2023.toLocaleString()}</TableCell>
+                      <TableCell className="text-right">{row.units2024.toLocaleString()}</TableCell>
+                      <TableCell className="text-right">
+                        <span className={parseFloat(growthPct) >= 0 ? "text-chart-3" : "text-destructive"}>
+                          {parseFloat(growthPct) >= 0 ? "+" : ""}{growthPct}%
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
