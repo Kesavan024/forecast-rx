@@ -1,6 +1,13 @@
 import { useState, useEffect } from "react";
 import { Cloud, CloudRain, Sun, Plus, Search, Trash2, Package, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { z } from "zod";
+
+const medicineNameSchema = z.string()
+  .trim()
+  .min(1, "Medicine name is required")
+  .max(100, "Medicine name must be less than 100 characters")
+  .regex(/^[a-zA-Z0-9\s\-().]+$/, "Medicine name contains invalid characters");
 import MonthBasedForecast from "./MonthBasedForecast";
 import FutureStockPrediction from "./FutureStockPrediction";
 import { Button } from "@/components/ui/button";
@@ -129,16 +136,18 @@ const WeatherForecast = ({ medicines: propMedicines, isStandaloneView = true }: 
   );
 
   const handleAddMedicine = () => {
-    const trimmedName = newMedicineName.trim();
+    const validation = medicineNameSchema.safeParse(newMedicineName);
     
-    if (!trimmedName) {
+    if (!validation.success) {
       toast({
         title: "Invalid Input",
-        description: "Please enter a medicine name.",
+        description: validation.error.errors[0].message,
         variant: "destructive",
       });
       return;
     }
+
+    const trimmedName = validation.data;
 
     if (medicines.includes(trimmedName)) {
       toast({
