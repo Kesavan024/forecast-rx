@@ -52,7 +52,7 @@ const Profile = () => {
         .single();
 
       if (error) {
-        if (import.meta.env.DEV) console.error("Error fetching profile:", error);
+        console.error("Error fetching profile:", error);
         toast({
           title: "Error",
           description: "Failed to load profile data.",
@@ -64,7 +64,7 @@ const Profile = () => {
       setProfile(data);
       setDisplayName(data.display_name || "");
     } catch (error) {
-      if (import.meta.env.DEV) console.error("Error:", error);
+      console.error("Error:", error);
     } finally {
       setLoading(false);
     }
@@ -117,7 +117,7 @@ const Profile = () => {
       // Refresh profile data
       fetchProfile();
     } catch (error) {
-      if (import.meta.env.DEV) console.error("Error:", error);
+      console.error("Error:", error);
       toast({
         title: "Error",
         description: "An unexpected error occurred.",
