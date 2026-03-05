@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Scan, Stethoscope, Pill } from "lucide-react";
+import { Scan, Stethoscope, Pill, TrendingUp, IndianRupee, Package } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { getSeasonalPattern, getMedicineMultiplier } from "@/constants/medicines";
 import mriScan from "@/assets/mri-scan.png";
 import ecoScan from "@/assets/eco-scan.png";
 import xrayScan from "@/assets/xray-scan.png";
@@ -143,8 +145,51 @@ const scans: ScanInfo[] = [
   },
 ];
 
+const generateMedicinePrediction = (medName: string) => {
+  const multiplier = getMedicineMultiplier(medName);
+  const seasonalPattern = getSeasonalPattern(medName);
+  const baseUnits = 250;
+  const pricePerUnit = 50 + (medName.length % 10) * 3; // deterministic per medicine
+
+  const currentMonth = new Date().getMonth();
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+  const next6 = [];
+  for (let i = 0; i < 6; i++) {
+    const idx = (currentMonth + i) % 12;
+    const units = Math.round(baseUnits * multiplier * seasonalPattern[idx]);
+    const revenue = Math.round(units * pricePerUnit);
+    next6.push({ month: monthNames[idx], units, revenue });
+  }
+  return { data: next6, pricePerUnit, totalUnits: next6.reduce((s, d) => s + d.units, 0), totalRevenue: next6.reduce((s, d) => s + d.revenue, 0) };
+};
+
 const MedicalScans = () => {
   const [selectedScan, setSelectedScan] = useState<ScanInfo | null>(null);
+
+  const predictions = useMemo(() => {
+    if (!selectedScan) return [];
+    return selectedScan.medicines.map(med => ({
+      ...med,
+      prediction: generateMedicinePrediction(med.name),
+    }));
+  }, [selectedScan]);
+
+  const aggregatedChart = useMemo(() => {
+    if (!predictions.length) return [];
+    const monthMap: Record<string, { month: string; totalUnits: number; totalRevenue: number }> = {};
+    predictions.forEach(p => {
+      p.prediction.data.forEach(d => {
+        if (!monthMap[d.month]) monthMap[d.month] = { month: d.month, totalUnits: 0, totalRevenue: 0 };
+        monthMap[d.month].totalUnits += d.units;
+        monthMap[d.month].totalRevenue += d.revenue;
+      });
+    });
+    return Object.values(monthMap);
+  }, [predictions]);
+
+  const grandTotalUnits = predictions.reduce((s, p) => s + p.prediction.totalUnits, 0);
+  const grandTotalRevenue = predictions.reduce((s, p) => s + p.prediction.totalRevenue, 0);
 
   return (
     <>
@@ -155,7 +200,7 @@ const MedicalScans = () => {
             Medical Imaging Services
           </CardTitle>
           <CardDescription>
-            Click on any scan to view related symptoms and recommended medicines
+            Click on any scan to view related symptoms, recommended medicines & future demand predictions
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -189,7 +234,7 @@ const MedicalScans = () => {
       </Card>
 
       <Dialog open={!!selectedScan} onOpenChange={(open) => !open && setSelectedScan(null)}>
-        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           {selectedScan && (
             <>
               <DialogHeader>
@@ -222,29 +267,86 @@ const MedicalScans = () => {
                   </div>
                 </div>
 
-                {/* Medicines */}
+                {/* Medicines with predictions */}
                 <div>
                   <h4 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-3">
                     <Pill className="h-4 w-4 text-primary" />
-                    Recommended Medicines
+                    Recommended Medicines & 6-Month Demand Forecast
                   </h4>
                   <div className="space-y-2">
-                    {selectedScan.medicines.map((med, i) => (
+                    {predictions.map((med, i) => (
                       <div
                         key={i}
-                        className="flex items-start justify-between gap-3 p-3 rounded-lg bg-muted/50 border border-border/50"
+                        className="p-3 rounded-lg bg-muted/50 border border-border/50"
                       >
-                        <div>
-                          <p className="text-sm font-medium text-foreground">{med.name}</p>
-                          <p className="text-xs text-muted-foreground">{med.usage}</p>
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-medium text-foreground">{med.name}</p>
+                            <p className="text-xs text-muted-foreground">{med.usage}</p>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <p className="text-sm font-semibold text-primary">{med.prediction.totalUnits.toLocaleString()} units</p>
+                            <p className="text-xs text-muted-foreground">₹{med.prediction.totalRevenue.toLocaleString()}</p>
+                          </div>
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
 
+                {/* Aggregated Prediction Summary */}
+                <div>
+                  <h4 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-3">
+                    <TrendingUp className="h-4 w-4 text-chart-1" />
+                    Combined 6-Month Forecast
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div className="p-3 rounded-lg bg-primary/10 border border-primary/30">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Package className="h-4 w-4 text-primary" />
+                        <span className="text-xs font-medium text-muted-foreground">Total Stock Needed</span>
+                      </div>
+                      <p className="text-xl font-bold text-foreground">{grandTotalUnits.toLocaleString()}</p>
+                      <p className="text-xs text-muted-foreground">units across all medicines</p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-chart-2/10 border border-chart-2/30">
+                      <div className="flex items-center gap-2 mb-1">
+                        <IndianRupee className="h-4 w-4 text-chart-2" />
+                        <span className="text-xs font-medium text-muted-foreground">Projected Revenue</span>
+                      </div>
+                      <p className="text-xl font-bold text-foreground">₹{grandTotalRevenue.toLocaleString()}</p>
+                      <p className="text-xs text-muted-foreground">estimated over 6 months</p>
+                    </div>
+                  </div>
+
+                  {/* Chart */}
+                  <div className="p-3 rounded-lg bg-background/50 border border-border/30">
+                    <ResponsiveContainer width="100%" height={220}>
+                      <BarChart data={aggregatedChart}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                        <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={11} />
+                        <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "hsl(var(--card))",
+                            border: "1px solid hsl(var(--border))",
+                            borderRadius: "8px",
+                          }}
+                          formatter={(value: any, name: string) => {
+                            if (name === "totalRevenue") return ["₹" + value.toLocaleString(), "Revenue"];
+                            return [value.toLocaleString() + " units", "Stock"];
+                          }}
+                        />
+                        <Legend />
+                        <Bar dataKey="totalUnits" name="Stock (units)" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="totalRevenue" name="Revenue (₹)" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
                 <p className="text-xs text-muted-foreground italic border-t border-border pt-3">
-                  ⚠️ This is for informational purposes only. Always consult a qualified healthcare professional before taking any medication.
+                  ⚠️ This is for informational purposes only. Always consult a qualified healthcare professional before taking any medication. Predictions are based on seasonal demand patterns.
                 </p>
               </div>
             </>
