@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, BarChart, Bar, ComposedChart, ReferenceLine } from "recharts";
-import { TrendingUp, TrendingDown, AlertTriangle, Activity, CalendarRange, CloudRain, Calendar, BarChart3 } from "lucide-react";
+import { TrendingUp, TrendingDown, AlertTriangle, Activity, CalendarRange, CloudRain, Calendar, BarChart3, Rocket } from "lucide-react";
 import { getSeasonalPattern, getMedicineMultiplier } from "@/constants/medicines";
 
 interface TimeSeriesAnalyticsProps {
@@ -88,13 +88,43 @@ const generate12MonthProjection = (medicine: string) => {
   });
 };
 
+const generateMultiYearPrediction = (medicine: string) => {
+  const multiplier = getMedicineMultiplier(medicine);
+  const pattern = getSeasonalPattern(medicine);
+  const baseUnits = 1000 * multiplier;
+  const futureYears = [2025, 2026, 2027, 2028, 2029];
+  const annualGrowthRate = 0.08; // 8% annual growth
+
+  return futureYears.map((year, yi) => {
+    const growthFactor = Math.pow(1 + annualGrowthRate, yi + 3); // building on 2022 base
+    const yearUnits = months.reduce((sum, _, mi) => {
+      return sum + Math.round(baseUnits * pattern[mi] * growthFactor * (0.92 + Math.random() * 0.16));
+    }, 0);
+    const avgPrice = 150 + yi * 8 + Math.random() * 30; // slight price inflation
+    const bestCase = Math.round(yearUnits * 1.18);
+    const worstCase = Math.round(yearUnits * 0.82);
+    return {
+      year: year.toString(),
+      predicted: yearUnits,
+      bestCase,
+      worstCase,
+      revenue: Math.round(yearUnits * avgPrice),
+      bestRevenue: Math.round(bestCase * avgPrice),
+      worstRevenue: Math.round(worstCase * avgPrice),
+      growthRate: ((growthFactor / Math.pow(1 + annualGrowthRate, yi + 2) - 1) * 100).toFixed(1),
+    };
+  });
+};
+
 const TimeSeriesAnalytics = ({ medicines }: TimeSeriesAnalyticsProps) => {
+
   const [selectedMedicine, setSelectedMedicine] = useState(medicines[0]);
 
   const yearlyData = useMemo(() => generateYearlyAnalytics(selectedMedicine), [selectedMedicine]);
   const seasonalData = useMemo(() => generateSeasonalAnalytics(selectedMedicine), [selectedMedicine]);
   const weatherData = useMemo(() => generateWeatherAnalytics(selectedMedicine), [selectedMedicine]);
   const projectionData = useMemo(() => generate12MonthProjection(selectedMedicine), [selectedMedicine]);
+  const multiYearData = useMemo(() => generateMultiYearPrediction(selectedMedicine), [selectedMedicine]);
 
   const projectionTotal = projectionData.reduce((s, d) => s + d.predicted, 0);
   const projectionRevenue = projectionData.reduce((s, d) => s + d.revenue, 0);
@@ -155,10 +185,14 @@ const TimeSeriesAnalytics = ({ medicines }: TimeSeriesAnalyticsProps) => {
 
       {/* Analytics Tabs */}
       <Tabs defaultValue="projection" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 h-auto">
+        <TabsList className="grid w-full grid-cols-5 h-auto">
           <TabsTrigger value="projection" className="flex items-center gap-1 py-3 text-xs sm:text-sm">
             <TrendingUp className="h-4 w-4" />
             <span className="hidden sm:inline">12-Month</span>
+          </TabsTrigger>
+          <TabsTrigger value="multiyear" className="flex items-center gap-1 py-3 text-xs sm:text-sm">
+            <Rocket className="h-4 w-4" />
+            <span className="hidden sm:inline">Multi-Year</span>
           </TabsTrigger>
           <TabsTrigger value="weather" className="flex items-center gap-1 py-3 text-xs sm:text-sm">
             <CloudRain className="h-4 w-4" />
@@ -218,6 +252,81 @@ const TimeSeriesAnalytics = ({ medicines }: TimeSeriesAnalyticsProps) => {
                         <td className="text-right py-2 px-3 font-semibold">{row.predicted.toLocaleString()}</td>
                         <td className="text-right py-2 px-3 text-chart-2">{row.bestCase.toLocaleString()}</td>
                         <td className="text-right py-2 px-3">₹{row.revenue.toLocaleString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Multi-Year Future Stock Predictions */}
+        <TabsContent value="multiyear" className="mt-6 space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Rocket className="h-5 w-5 text-chart-3" />
+                Future Stock Predictions (2025–2029)
+              </CardTitle>
+              <CardDescription>Multi-year demand forecast with best-case and worst-case scenarios</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[350px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={multiYearData}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
+                    <XAxis dataKey="year" tick={{ fontSize: 12 }} />
+                    <YAxis tick={{ fontSize: 10 }} />
+                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }} />
+                    <Legend />
+                    <Bar dataKey="worstCase" fill="hsl(var(--chart-4))" opacity={0.5} name="Worst Case" />
+                    <Bar dataKey="predicted" fill="hsl(var(--primary))" name="Predicted" />
+                    <Bar dataKey="bestCase" fill="hsl(var(--chart-2))" opacity={0.5} name="Best Case" />
+                    <Line type="monotone" dataKey="predicted" stroke="hsl(var(--chart-3))" strokeWidth={3} dot={{ r: 5 }} name="Trend" />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Revenue Projection */}
+              <div className="mt-6 h-[250px]">
+                <h4 className="font-semibold text-sm mb-3">Revenue Projection (₹)</h4>
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={multiYearData}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
+                    <XAxis dataKey="year" tick={{ fontSize: 12 }} />
+                    <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
+                    <Tooltip formatter={(value: number) => [`₹${value.toLocaleString()}`, '']} contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }} />
+                    <Legend />
+                    <Area type="monotone" dataKey="bestRevenue" stroke="hsl(var(--chart-2))" fill="hsl(var(--chart-2))" fillOpacity={0.1} name="Best Revenue" />
+                    <Area type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.25} strokeWidth={2} name="Predicted Revenue" />
+                    <Area type="monotone" dataKey="worstRevenue" stroke="hsl(var(--chart-4))" fill="hsl(var(--chart-4))" fillOpacity={0.1} name="Worst Revenue" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Summary Table */}
+              <div className="mt-6 overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left py-2 px-3">Year</th>
+                      <th className="text-right py-2 px-3">Worst Case</th>
+                      <th className="text-right py-2 px-3">Predicted</th>
+                      <th className="text-right py-2 px-3">Best Case</th>
+                      <th className="text-right py-2 px-3">Revenue</th>
+                      <th className="text-right py-2 px-3">Growth</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {multiYearData.map((row) => (
+                      <tr key={row.year} className="border-b border-border/50 hover:bg-muted/50">
+                        <td className="py-2 px-3 font-medium">{row.year}</td>
+                        <td className="text-right py-2 px-3 text-chart-4">{row.worstCase.toLocaleString()}</td>
+                        <td className="text-right py-2 px-3 font-semibold">{row.predicted.toLocaleString()}</td>
+                        <td className="text-right py-2 px-3 text-chart-2">{row.bestCase.toLocaleString()}</td>
+                        <td className="text-right py-2 px-3">₹{row.revenue.toLocaleString()}</td>
+                        <td className="text-right py-2 px-3 text-chart-2 font-semibold">+{row.growthRate}%</td>
                       </tr>
                     ))}
                   </tbody>
